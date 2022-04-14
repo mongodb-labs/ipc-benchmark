@@ -6,19 +6,19 @@ namespace ipcbench {
 
 namespace {
 
-IPCMethods _methods;
+Methods _methods;
 
 }  // namespace
 
-void registerMethod(IPCMethod&& method) {
-    _methods.emplace(method._name, std::move(method));
+void registerMethod(Method* method) {
+    _methods.emplace(method->name(), method);
 }
 
-const IPCMethod& getMethod(const std::string& name) {
+Method* getMethod(const std::string& name) {
     return _methods.at(name);
 }
 
-const IPCMethods& allMethods() {
+const Methods& allMethods() {
     return _methods;
 }
 

@@ -3,11 +3,15 @@
 namespace ipcbench {
 namespace pipe {
 
-constexpr auto NAME = "pipe";
+class Method : public ipcbench::Method {
+public:
+    Method() {
+        registerMethod(this);
+    }
 
-struct Method {
-
-    Parameters params;
+    std::string name() const {
+        return "pipe";
+    }
 
     int pipefd1[2] = {0};
     int pipefd2[2] = {0};
@@ -67,67 +71,61 @@ struct Method {
         }
     }
 
-    Method() {
-        registerMethod(IPCMethod{NAME,
+    void setup() {
+        total_expected = params._count * params._size;
 
-            // Setup
-            [&] (const Parameters& p) {
-                params = p;
+        errno = 0;
+        buf = (char*)::malloc(params._size);
+        if (buf == NULL) {
+            perror("malloc");
+        }
+        ::memset(buf, 0, params._size);
 
-                total_expected = params._count * params._size;
+        errno = 0;
+        if (::pipe(pipefd1) == -1) {
+            perror("pipe");
+        }
 
-                errno = 0;
-                buf = (char*)::malloc(params._size);
-                if (buf == NULL) {
-                    perror("malloc");
-                }
-                ::memset(buf, 0, params._size);
-
-                errno = 0;
-                if (::pipe(pipefd1) == -1) {
-                    perror("pipe");
-                }
-
-                errno = 0;
-                if (::pipe(pipefd2) == -1) {
-                    perror("pipe");
-                }
-            },
-
-            // Parent
-            [&] () {
-                for (auto i = 0; i < params._count; i++) {
-                    mangle_buf(10);
-                    total_mangled += 10;
-
-                    write_buf(pipefd1[1]);
-                    total_write += params._size;
-
-                    read_buf(pipefd2[0]);
-                    total_read += params._size;
-                }
-
-                check();
-            },
-
-            // Child
-            [&] () {
-                for (auto i = 0; i < params._count; i++) {
-                    read_buf(pipefd1[0]);
-                    total_read += params._size;
-
-                    mangle_buf(10);
-                    total_mangled += 10;
-
-                    write_buf(pipefd2[1]);
-                    total_write += params._size;
-                }
-
-                check();
-            },
-
-        });
+        errno = 0;
+        if (::pipe(pipefd2) == -1) {
+            perror("pipe");
+        }
     }
+
+    void parent() {
+        for (auto i = 0; i < params._count; i++) {
+            mangle_buf(10);
+            total_mangled += 10;
+
+            write_buf(pipefd1[1]);
+            total_write += params._size;
+
+            read_buf(pipefd2[0]);
+            total_read += params._size;
+        }
+    }
+
+    void parent_check() {
+        check();
+    }
+
+    void child() {
+        for (auto i = 0; i < params._count; i++) {
+            read_buf(pipefd1[0]);
+            total_read += params._size;
+
+            mangle_buf(10);
+            total_mangled += 10;
+
+            write_buf(pipefd2[1]);
+            total_write += params._size;
+        }
+    }
+
+    void child_check() {
+        check();
+    }
+
 } _method;
 
 }  // namespace

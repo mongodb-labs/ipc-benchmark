@@ -19,37 +19,51 @@ int main(int argc, char *argv[]) {
     unsigned long long count = std::atoi(argv[2]);
     Parameters params{size, count};
 
-    std::list<const IPCMethod*> methods;
+    std::list<Method*> methods;
     if (argc > 3) {
         for (unsigned int i = 3; i < argc; i++) {
             try {
-                methods.push_back(&getMethod(std::string(argv[i])));
+                methods.push_back(getMethod(std::string(argv[i])));
             } catch (const std::out_of_range& e) {
                 std::cerr << "Unknown method: " << argv[i] << std::endl;
                 return 1;
             }
         }
     } else {
-        for (const auto& method : allMethods()) {
-            methods.push_back(&method.second);
+        for (auto method : allMethods()) {
+            methods.push_back(method.second);
         }
     }
 
-    for (const auto method : methods) {
-        method->_setup(params);
+    for (auto method : methods) {
+        method->init(params);
 
-        std::cout << method->_name << std::endl;
+        std::cout << method->name() << std::endl;
+
+        method->setup();
 
         auto child_pid = fork();
         if (child_pid == 0) {
-            method->_child();
+            method->child_setup();
+            // FIXME: sync the parent and child before kicking off
+            method->child();
+            method->child_check();
             return 0;
         }
 
+        method->parent_setup();
+
+        // FIXME: sync the parent and child before kicking off
+        // probably best would be to make a pipe pair, and then use
+        // close() each side, while the other process is using select()
+        // to notice it
+
         struct timeval begin, end;
         gettimeofday(&begin, NULL);
-        method->_parent();
+        method->parent();
         gettimeofday(&end, NULL);
+
+        method->parent_check();
 
         // FIXME
         double tm = getdetlatimeofday(&begin, &end);
@@ -59,6 +73,7 @@ int main(int argc, char *argv[]) {
 
         int wstatus;
         waitpid(child_pid, &wstatus, 0);
+        // FIXME: check if the child failed
     }
 
     return 0;

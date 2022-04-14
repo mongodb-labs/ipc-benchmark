@@ -19,18 +19,33 @@ struct Parameters {
 };
 
 
-struct IPCMethod {
-    std::string _name;
-    std::function<void(const Parameters&)> _setup;
-    std::function<void()> _parent;
-    std::function<void()> _child;
+class Method {
+public:
+    Parameters params;
+
+    virtual void init(const Parameters& p) {
+        params = p;
+    }
+
+    virtual std::string name() const = 0;
+
+    virtual void setup() {}
+
+    virtual void parent_setup() {}
+    virtual void child_setup() {}
+
+    virtual void parent() = 0;
+    virtual void child() = 0;
+
+    virtual void parent_check() {}
+    virtual void child_check() {}
 };
 
-using IPCMethods = std::map<std::string, IPCMethod>;
+using Methods = std::map<std::string, Method*>;
 
-void registerMethod(IPCMethod&& method);
-const IPCMethod& getMethod(const std::string& name);
-const IPCMethods& allMethods();
+void registerMethod(Method* method);
+Method* getMethod(const std::string& name);
+const Methods& allMethods();
 
 
 void perror(const char* what);

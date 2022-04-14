@@ -12,13 +12,13 @@ all: $(TARGET)
 clean:
 	rm -f $(TARGET) $(OBJS)
 
-pipe1.o: pipe1.cpp
-pipe.o: pipe.cpp
+pipe1.o: pipe1.cpp common.h
+pipe.o: pipe.cpp common.h
 
-fifo1.o: fifo1.cpp
-fifo.o: fifo.cpp
+fifo1.o: fifo1.cpp common.h
+fifo.o: fifo.cpp common.h
 
-common.o: common.cpp
+common.o: common.cpp common.h
 
-main: main.cpp $(OBJS)
+main: main.cpp common.h $(OBJS)
 
