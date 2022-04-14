@@ -28,6 +28,7 @@ public:
         if (::write(fd, buf, params._size) != params._size) {
             perror("write");
         }
+        total_write += params._size;
     }
 
     void read_buf(int fd) {
@@ -42,6 +43,7 @@ public:
             completed += n;
             remaining -= n;
         }
+        total_read += params._size;
     }
 
     void mangle_buf(size_t n) {
@@ -49,6 +51,7 @@ public:
             size_t r = rand() % params._size;
             buf[r]++;
         }
+        total_mangled += n;
     }
 
     void check() {
@@ -95,13 +98,9 @@ public:
     void parent() {
         for (auto i = 0; i < params._count; i++) {
             mangle_buf(10);
-            total_mangled += 10;
-
             write_buf(pipefd1[1]);
-            total_write += params._size;
 
             read_buf(pipefd2[0]);
-            total_read += params._size;
         }
     }
 
@@ -112,13 +111,9 @@ public:
     void child() {
         for (auto i = 0; i < params._count; i++) {
             read_buf(pipefd1[0]);
-            total_read += params._size;
 
             mangle_buf(10);
-            total_mangled += 10;
-
             write_buf(pipefd2[1]);
-            total_write += params._size;
         }
     }
 
