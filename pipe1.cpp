@@ -15,7 +15,6 @@ public:
 
     int pipefd[2] = {0};
     unsigned long long sum, n;
-    char *buf;
 
     void setup() {
         errno = 0;

@@ -15,64 +15,6 @@ public:
 
     int pipefd1[2] = {0};
     int pipefd2[2] = {0};
-    char *buf;
-
-    unsigned long long total_read = 0;
-    unsigned long long total_write = 0;
-    unsigned long long total_mangled = 0;
-    unsigned long long total_expected = 0;
-
-    void write_buf(int fd) {
-        // FIXME: handle EAGAIN/EINTR
-        errno = 0;
-        if (::write(fd, buf, params._size) != params._size) {
-            perror("write");
-        }
-        total_write += params._size;
-    }
-
-    void read_buf(int fd) {
-        auto completed = 0;
-        auto remaining = params._size;
-        while (completed < params._size) {
-            errno = 0;
-            auto n = ::read(fd, buf + completed, remaining);
-            if (n == -1 && errno != EAGAIN && errno != EINTR) {
-                perror("read");
-            }
-            completed += n;
-            remaining -= n;
-        }
-        total_read += params._size;
-    }
-
-    void mangle_buf(size_t n) {
-        for (auto i = 0; i < n; i++) {
-            size_t r = rand() % params._size;
-            buf[r]++;
-        }
-        total_mangled += n;
-    }
-
-    void check() {
-        if (total_write != total_expected) {
-            std::cerr << "total_write error: " << total_write << " != " << total_expected << std::endl;
-            throw std::runtime_error("total_write error");
-        }
-        if (total_read != total_expected) {
-            std::cerr << "total_read error: " << total_read << " != " << total_expected << std::endl;
-            throw std::runtime_error("total_read error");
-        }
-
-        unsigned long long total = 0;
-        for (auto i = 0; i < params._size; i++) {
-            total += buf[i];
-        }
-        if (total != 2 * total_mangled) {
-            std::cerr << "total error: " << total << " != " << params._count * 10 << std::endl;
-            throw std::runtime_error("total error");
-        }
-    }
 
     void setup() {
         total_expected = params._count * params._size;
@@ -105,7 +47,9 @@ public:
     }
 
     void parent_check() {
-        check();
+        check_total_read();
+        check_total_write();
+        check_total_mangled();
     }
 
     void child() {
@@ -118,7 +62,9 @@ public:
     }
 
     void child_check() {
-        check();
+        check_total_read();
+        check_total_write();
+        check_total_mangled();
     }
 
 } _method;

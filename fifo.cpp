@@ -15,7 +15,6 @@ public:
 
     int fd;
     unsigned long long sum, n;
-    char *buf;
     const char* filename = ".fifo-ipc";
 
     void setup() {
