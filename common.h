@@ -14,10 +14,12 @@
 
 namespace ipcbench {
 
-using size_type = ssize_t;
+using size_type = long long;
+
 struct Parameters {
-    size_type _size;
-    size_type _count;
+    size_type _size = 0;
+    size_type _count = 0;
+    size_type _num_mangle = 0;
 };
 
 
@@ -25,8 +27,8 @@ class Method {
 public:
     // FIXME: these should be protected
     Parameters params;
-    char *buf;
-    std::atomic_char* guard;
+    unsigned char *buf;
+    std::atomic<unsigned char>* guard;
     bool _isParent;
 
 
@@ -66,7 +68,7 @@ protected:
 
     size_type total_mangled = 0;
 
-    virtual void mangle_buf(size_type n);
+    virtual void mangle_buf(size_type n = -1);
     virtual void check_total_mangled();
 
 

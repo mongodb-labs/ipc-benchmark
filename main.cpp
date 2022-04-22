@@ -10,18 +10,19 @@
 using namespace ipcbench;
 
 int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        std::cerr << "Usage: ./main <size> <count> [<method> <method> ...]" << std::endl;
+    if (argc < 4) {
+        std::cerr << "Usage: ./main <size> <count> <num_mangle> [<method> <method> ...]" << std::endl;
         return 1;
     }
 
     size_type size = std::atoi(argv[1]);
     size_type count = std::atoi(argv[2]);
-    Parameters params{size, count};
+    size_type num_mangle = std::atoi(argv[3]);
+    Parameters params{size, count, num_mangle};
 
     std::list<Method*> methods;
-    if (argc > 3) {
-        for (int i = 3; i < argc; i++) {
+    if (argc > 4) {
+        for (int i = 4; i < argc; i++) {
             try {
                 methods.push_back(getMethod(std::string(argv[i])));
             } catch (const std::out_of_range& e) {

@@ -19,7 +19,7 @@ public:
 
     void setup() override {
         errno = 0;
-        buf = (char*)::malloc(params._size);
+        buf = (unsigned char*)::malloc(params._size);
         if (buf == NULL) {
             perror("malloc");
         }

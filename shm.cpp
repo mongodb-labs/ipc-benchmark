@@ -38,10 +38,11 @@ public:
         }
 
         errno = 0;
-        buf = (char*)shmat(segment_id, NULL, 0);
-        if (buf < (char*)0) {
+        char* addr = (char*)shmat(segment_id, NULL, 0);
+        if (addr < (char*)0) {
             perror("shmat");
         }
+        buf = (unsigned char*) addr;
 
         ::memset(buf, 0, params._size);
 
@@ -61,7 +62,7 @@ public:
         }
 
         errno = 0;
-        guard = static_cast<std::atomic_char*>(shmat(guard_id, NULL, 0));
+        guard = static_cast<std::atomic<unsigned char>*>(shmat(guard_id, NULL, 0));
         if (guard < 0) {
             perror("guard shmat");
         }
@@ -74,7 +75,7 @@ public:
         wait_for_init();
 
         for (size_type i = 0; i < params._count; i++) {
-            mangle_buf(10);
+            mangle_buf();
             give_control_to_child();
 
             wait_for_parent_control();
@@ -112,7 +113,7 @@ public:
         for (size_type i = 0; i < params._count; i++) {
             wait_for_child_control();
 
-            mangle_buf(10);
+            mangle_buf();
             give_control_to_parent();
         }
     }

@@ -64,6 +64,9 @@ void Method::check_total_write() {
 
 
 void Method::mangle_buf(size_type n) {
+    if (n == -1) {
+        n = params._num_mangle;
+    }
     // ensure no collisions between parent/child manglings
     // parent only does even bytes
     // child only does odd bytes
@@ -77,6 +80,11 @@ void Method::mangle_buf(size_type n) {
 }
 
 void Method::check_total_mangled() {
+    if (params._num_mangle * params._count > 255 * params._size) {
+        std::cerr << "warning: num_mangle * count > 255 * size, so mangling counts cannot be verified" << std::endl;
+        return;
+    }
+
     size_type total = 0;
     for (size_type i = 0; i < params._size; i++) {
         total += buf[i];

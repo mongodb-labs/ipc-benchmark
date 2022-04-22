@@ -18,7 +18,7 @@ public:
 
     void setup() {
         errno = 0;
-        buf = (char*)::malloc(params._size);
+        buf = (unsigned char*)::malloc(params._size);
         if (buf == NULL) {
             perror("malloc");
         }
@@ -37,7 +37,7 @@ public:
 
     void parent() {
         for (size_type i = 0; i < params._count; i++) {
-            mangle_buf(10);
+            mangle_buf();
             write_buf(pipefd1[1]);
 
             read_buf(pipefd2[0]);
@@ -54,7 +54,7 @@ public:
         for (size_type i = 0; i < params._count; i++) {
             read_buf(pipefd1[0]);
 
-            mangle_buf(10);
+            mangle_buf();
             write_buf(pipefd2[1]);
         }
     }
