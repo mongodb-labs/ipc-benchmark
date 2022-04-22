@@ -14,7 +14,7 @@ public:
     }
 
     int fd;
-    unsigned long long sum, n;
+    size_type sum, n;
     const char* filename = ".fifo-ipc";
 
     void setup() override {
@@ -46,7 +46,7 @@ public:
     }
 
     void parent() override {
-        for (auto i = 0; i < params._count; i++) {
+        for (size_type i = 0; i < params._count; i++) {
             // FIXME: handle EAGAIN/EINTR
             errno = 0;
             if (::write(fd, buf, params._size) != params._size) {
@@ -57,7 +57,7 @@ public:
 
     void child() override {
         sum = 0;
-        for (auto i = 0; i < params._count; i++) {
+        for (size_type i = 0; i < params._count; i++) {
             // FIXME: handle EAGAIN/EINTR
             errno = 0;
             n = ::read(fd, buf, params._size);

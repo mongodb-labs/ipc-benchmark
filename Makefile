@@ -1,5 +1,6 @@
 
-CFLAGS := -g -Wall
+CFLAGS := -g -Wall -fPIC
+CXXFLAGS := -g -Wall -fPIC
 
 TARGET := main
 

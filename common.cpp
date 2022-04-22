@@ -24,8 +24,8 @@ const Methods& allMethods() {
 
 
 void Method::read_buf(int fd) {
-    auto completed = 0;
-    auto remaining = params._size;
+    size_type completed = 0;
+    size_type remaining = params._size;
     while (completed < params._size) {
         errno = 0;
         auto n = ::read(fd, buf + completed, remaining);
@@ -63,13 +63,13 @@ void Method::check_total_write() {
 }
 
 
-void Method::mangle_buf(size_t n) {
+void Method::mangle_buf(size_type n) {
     // ensure no collisions between parent/child manglings
     // parent only does even bytes
     // child only does odd bytes
-    size_t adjust = isParent() ? 0 : 1;
-    for (auto i = 0; i < n; i++) {
-        size_t r = rand() % params._size;
+    size_type adjust = isParent() ? 0 : 1;
+    for (size_type i = 0; i < n; i++) {
+        size_type r = rand() % params._size;
         r = r / 2 * 2 + adjust;
         buf[r]++;
     }
@@ -77,8 +77,8 @@ void Method::mangle_buf(size_t n) {
 }
 
 void Method::check_total_mangled() {
-    unsigned long long total = 0;
-    for (auto i = 0; i < params._size; i++) {
+    size_type total = 0;
+    for (size_type i = 0; i < params._size; i++) {
         total += buf[i];
     }
     if (total != 2 * total_mangled) {

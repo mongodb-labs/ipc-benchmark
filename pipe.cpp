@@ -17,8 +17,6 @@ public:
     int pipefd2[2] = {0};
 
     void setup() {
-        total_expected = params._count * params._size;
-
         errno = 0;
         buf = (char*)::malloc(params._size);
         if (buf == NULL) {
@@ -38,7 +36,7 @@ public:
     }
 
     void parent() {
-        for (auto i = 0; i < params._count; i++) {
+        for (size_type i = 0; i < params._count; i++) {
             mangle_buf(10);
             write_buf(pipefd1[1]);
 
@@ -53,7 +51,7 @@ public:
     }
 
     void child() {
-        for (auto i = 0; i < params._count; i++) {
+        for (size_type i = 0; i < params._count; i++) {
             read_buf(pipefd1[0]);
 
             mangle_buf(10);

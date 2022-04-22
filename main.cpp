@@ -15,13 +15,13 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    unsigned long long size = std::atoi(argv[1]);
-    unsigned long long count = std::atoi(argv[2]);
+    size_type size = std::atoi(argv[1]);
+    size_type count = std::atoi(argv[2]);
     Parameters params{size, count};
 
     std::list<Method*> methods;
     if (argc > 3) {
-        for (unsigned int i = 3; i < argc; i++) {
+        for (int i = 3; i < argc; i++) {
             try {
                 methods.push_back(getMethod(std::string(argv[i])));
             } catch (const std::out_of_range& e) {

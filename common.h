@@ -13,9 +13,10 @@
 
 namespace ipcbench {
 
+using size_type = ssize_t;
 struct Parameters {
-    std::size_t _size;
-    unsigned long long _count;
+    size_type _size;
+    size_type _count;
 };
 
 
@@ -41,6 +42,7 @@ public:
 
     virtual void init(const Parameters& p) {
         params = p;
+        total_expected = params._count * params._size;
     }
 
     bool isParent() const {
@@ -48,9 +50,9 @@ public:
     }
 
 protected:
-    unsigned long long total_read = 0;
-    unsigned long long total_write = 0;
-    unsigned long long total_expected = 0;
+    size_type total_read = 0;
+    size_type total_write = 0;
+    size_type total_expected = 0;
 
     virtual void read_buf(int fd);
     virtual void check_total_read();
@@ -59,9 +61,9 @@ protected:
     virtual void check_total_write();
 
 
-    unsigned long long total_mangled = 0;
+    size_type total_mangled = 0;
 
-    virtual void mangle_buf(size_t n);
+    virtual void mangle_buf(size_type n);
     virtual void check_total_mangled();
 };
 
