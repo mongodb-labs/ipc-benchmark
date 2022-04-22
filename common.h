@@ -1,3 +1,4 @@
+#include <atomic>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -25,7 +26,9 @@ public:
     // FIXME: these should be protected
     Parameters params;
     char *buf;
+    std::atomic_char* guard;
     bool _isParent;
+
 
     virtual std::string name() const = 0;
 
@@ -65,6 +68,19 @@ protected:
 
     virtual void mangle_buf(size_type n);
     virtual void check_total_mangled();
+
+
+    static constexpr char _PARENT = 'p';
+    static constexpr char _CHILD = 'c';
+
+    virtual void give_to(char target);
+    virtual void wait_for(char target);
+    virtual void wait_for_init();
+    virtual void give_control_to_parent();
+    virtual void give_control_to_child();
+    virtual void wait_for_parent_control();
+    virtual void wait_for_child_control();
+
 };
 
 using Methods = std::map<std::string, Method*>;

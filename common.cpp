@@ -88,6 +88,39 @@ void Method::check_total_mangled() {
 }
 
 
+void Method::give_to(char target) {
+    guard->store(target);
+}
+
+void Method::wait_for(char target) {
+    while (guard->load() != target) {
+        // spinwait
+    }
+}
+
+void Method::wait_for_init() {
+    (*guard)--;
+    wait_for(0);
+}
+
+void Method::give_control_to_parent() {
+    give_to(_PARENT);
+}
+
+void Method::give_control_to_child() {
+    give_to(_CHILD);
+}
+
+void Method::wait_for_parent_control() {
+    wait_for(_PARENT);
+}
+
+void Method::wait_for_child_control() {
+    wait_for(_CHILD);
+}
+
+
+
 
 double getdetlatimeofday(struct timeval *begin, struct timeval *end) {
     return (end->tv_sec + end->tv_usec * 1.0 / 1000000) -

@@ -1,6 +1,5 @@
 #include "common.h"
 
-#include <atomic>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -23,42 +22,6 @@ public:
 
     key_t guard_key;
 	int guard_id;
-    std::atomic_char* guard;
-
-
-    static constexpr char _PARENT = 'p';
-    static constexpr char _CHILD = 'c';
-
-    void give_to(char target) {
-        guard->store(target);
-    }
-
-    void wait_for(char target) {
-        while (guard->load() != target) {
-            // spinwait
-        }
-    }
-
-    void wait_for_init() {
-        (*guard)--;
-        wait_for(0);
-    }
-
-    void give_control_to_parent() {
-        give_to(_PARENT);
-    }
-
-    void give_control_to_child() {
-        give_to(_CHILD);
-    }
-
-    void wait_for_parent_control() {
-        wait_for(_PARENT);
-    }
-
-    void wait_for_child_control() {
-        wait_for(_CHILD);
-    }
 
 
     void setup() override {
