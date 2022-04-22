@@ -24,6 +24,7 @@ public:
     Parameters params;
 
     char *buf;
+    bool isParent;
 
 
     virtual void init(const Parameters& p) {

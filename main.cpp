@@ -44,6 +44,7 @@ int main(int argc, char *argv[]) {
 
         auto child_pid = fork();
         if (child_pid == 0) {
+            method->isParent = false;
             method->child_setup();
             // FIXME: sync the parent and child before kicking off
             method->child();
@@ -51,6 +52,7 @@ int main(int argc, char *argv[]) {
             return 0;
         }
 
+        method->isParent = true;
         method->parent_setup();
 
         // FIXME: sync the parent and child before kicking off
