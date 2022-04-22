@@ -46,7 +46,7 @@ public:
         }
     }
 
-    void parent_check() {
+    void parent_finish() {
         check_total_read();
         check_total_write();
         check_total_mangled();
@@ -61,7 +61,7 @@ public:
         }
     }
 
-    void child_check() {
+    void child_finish() {
         check_total_read();
         check_total_write();
         check_total_mangled();

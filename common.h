@@ -21,15 +21,10 @@ struct Parameters {
 
 class Method {
 public:
+    // FIXME: these should be protected
     Parameters params;
-
     char *buf;
-    bool isParent;
-
-
-    virtual void init(const Parameters& p) {
-        params = p;
-    }
+    bool _isParent;
 
     virtual std::string name() const = 0;
 
@@ -41,10 +36,18 @@ public:
     virtual void parent() = 0;
     virtual void child() = 0;
 
-    virtual void parent_check() {}
-    virtual void child_check() {}
+    virtual void parent_finish() {}
+    virtual void child_finish() {}
 
+    virtual void init(const Parameters& p) {
+        params = p;
+    }
 
+    bool isParent() const {
+        return _isParent;
+    }
+
+protected:
     unsigned long long total_read = 0;
     unsigned long long total_write = 0;
     unsigned long long total_expected = 0;

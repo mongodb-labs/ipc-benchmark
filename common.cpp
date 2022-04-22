@@ -67,7 +67,7 @@ void Method::mangle_buf(size_t n) {
     // ensure no collisions between parent/child manglings
     // parent only does even bytes
     // child only does odd bytes
-    size_t adjust = isParent ? 0 : 1;
+    size_t adjust = isParent() ? 0 : 1;
     for (auto i = 0; i < n; i++) {
         size_t r = rand() % params._size;
         r = r / 2 * 2 + adjust;

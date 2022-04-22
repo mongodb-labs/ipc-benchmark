@@ -9,7 +9,7 @@ public:
         registerMethod(this);
     }
 
-    std::string name() const {
+    std::string name() const override {
         return "fifo";
     }
 
@@ -17,7 +17,7 @@ public:
     unsigned long long sum, n;
     const char* filename = ".fifo-ipc";
 
-    void setup() {
+    void setup() override {
         errno = 0;
         buf = (char*)::malloc(params._size);
         if (buf == NULL) {
@@ -45,7 +45,7 @@ public:
         }
     }
 
-    void parent() {
+    void parent() override {
         for (auto i = 0; i < params._count; i++) {
             // FIXME: handle EAGAIN/EINTR
             errno = 0;
@@ -55,7 +55,7 @@ public:
         }
     }
 
-    void child() {
+    void child() override {
         sum = 0;
         for (auto i = 0; i < params._count; i++) {
             // FIXME: handle EAGAIN/EINTR

@@ -44,15 +44,15 @@ int main(int argc, char *argv[]) {
 
         auto child_pid = fork();
         if (child_pid == 0) {
-            method->isParent = false;
+            method->_isParent = false;
             method->child_setup();
             // FIXME: sync the parent and child before kicking off
             method->child();
-            method->child_check();
+            method->child_finish();
             return 0;
         }
 
-        method->isParent = true;
+        method->_isParent = true;
         method->parent_setup();
 
         // FIXME: sync the parent and child before kicking off
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
         method->parent();
         gettimeofday(&end, NULL);
 
-        method->parent_check();
+        method->parent_finish();
 
         // FIXME
         double tm = getdetlatimeofday(&begin, &end);
