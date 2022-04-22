@@ -19,6 +19,9 @@ public:
     void setup() {
         errno = 0;
         buf = (unsigned char*)::malloc(params._size);
+        // FIXME: check for failure (both posix_memalign() and sysconf())
+        // FIXME: move this into a helper function
+        //::posix_memalign((void**)&buf, sysconf(_SC_PAGESIZE), params._size);
         if (buf == NULL) {
             perror("malloc");
         }
