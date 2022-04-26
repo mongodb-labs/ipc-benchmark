@@ -10,6 +10,7 @@
 #include <system_error>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 namespace ipcbench {
@@ -35,6 +36,8 @@ public:
     virtual std::string name() const = 0;
 
     virtual void setup() {}
+
+    virtual void execute();
 
     virtual void parent_setup() {}
     virtual void child_setup() {}

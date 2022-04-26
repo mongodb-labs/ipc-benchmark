@@ -207,6 +207,50 @@ void Method::wait_for_child_control() {
 
 
 
+void Method::execute() {
+    errno = 0;
+    auto child_pid = fork();
+    if (child_pid < 0) {
+        throw_errno("fork");
+    }
+
+    if (child_pid == 0) {
+        _isParent = false;
+        child_setup();
+        // FIXME: sync the parent and child before kicking off
+        child();
+        child_finish();
+        exit(0);
+    }
+
+    _isParent = true;
+    parent_setup();
+
+    // FIXME: sync the parent and child before kicking off
+    // probably best would be to make a pipe pair, and then use
+    // close() each side, while the other process is using select()
+    // to notice it
+
+    struct timeval begin, end;
+    gettimeofday(&begin, NULL);
+    parent();
+    gettimeofday(&end, NULL);
+
+    parent_finish();
+
+    // FIXME
+    double tm = getdetlatimeofday(&begin, &end);
+    printf("%.0fMB/s %.0fmsg/s\n",
+        params._count * params._size * 1.0 / (tm * 1024 * 1024),
+        params._count * 1.0 / tm);
+
+    int wstatus;
+    waitpid(child_pid, &wstatus, 0);
+    // FIXME: check if the child failed
+}
+
+
+
 void Method::throw_runtime(const char* what) {
     std::ostringstream os;
     os << (isParent() ? "parent: " : "child: ") << what;
