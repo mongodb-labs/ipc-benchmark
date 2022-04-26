@@ -66,7 +66,7 @@ public:
 
         if (sum != params._count * params._size) {
             std::cerr << "sum error: " << sum << " != " << (params._count * params._size) << std::endl;
-            throw std::runtime_error("sum error");
+            throw_runtime("sum error");
         }
     }
 

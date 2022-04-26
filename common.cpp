@@ -7,6 +7,7 @@
 #include "common.h"
 
 #include <cerrno>
+#include <sstream>
 
 namespace ipcbench {
 
@@ -84,7 +85,7 @@ void Method::read_buf(int fd) {
 void Method::check_total_read() {
     if (total_read != total_expected) {
         std::cerr << "total_read error: " << total_read << " != " << total_expected << std::endl;
-        throw std::runtime_error("total_read error");
+        throw_runtime("total_read error");
     }
 }
 
@@ -101,7 +102,7 @@ void Method::write_buf(int fd) {
 void Method::check_total_write() {
     if (total_write != total_expected) {
         std::cerr << "total_write error: " << total_write << " != " << total_expected << std::endl;
-        throw std::runtime_error("total_write error");
+        throw_runtime("total_write error");
     }
 }
 
@@ -168,7 +169,7 @@ void Method::check_total_mangled() {
     }
     if (total != 2 * total_mangled) {
         std::cerr << "total error: " << total << " != " << 2 * total_mangled << std::endl;
-        throw std::runtime_error("total error");
+        throw_runtime("total error");
     }
 }
 
@@ -206,10 +207,31 @@ void Method::wait_for_child_control() {
 
 
 
+void Method::throw_runtime(const char* what) {
+    std::ostringstream os;
+    os << (isParent() ? "parent: " : "child: ") << what;
+    ::ipcbench::throw_runtime(os.str().c_str());
+}
+
+void Method::throw_errno(const char* what) {
+    throw_errno(what, errno);
+}
+
+void Method::throw_errno(const char* what, int _errno) {
+    std::ostringstream os;
+    os << (isParent() ? "parent: " : "child: ") << what;
+    ::ipcbench::throw_errno(os.str().c_str(), _errno);
+}
+
+
 
 double getdetlatimeofday(struct timeval *begin, struct timeval *end) {
     return (end->tv_sec + end->tv_usec * 1.0 / 1000000) -
            (begin->tv_sec + begin->tv_usec * 1.0 / 1000000);
+}
+
+void throw_runtime(const char* what) {
+    throw std::runtime_error(what);
 }
 
 void throw_errno(const char* what) {

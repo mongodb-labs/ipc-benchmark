@@ -29,7 +29,7 @@ public:
     Parameters params;
     unsigned char *buf;
     std::atomic<unsigned char>* guard;
-    bool _isParent;
+    bool _isParent = true;
 
 
     virtual std::string name() const = 0;
@@ -90,6 +90,11 @@ protected:
     virtual void wait_for_parent_control();
     virtual void wait_for_child_control();
 
+
+    virtual void throw_runtime(const char* what);
+
+    virtual void throw_errno(const char* what);
+    virtual void throw_errno(const char* what, int _errno);
 };
 
 using Methods = std::map<std::string, Method*>;
@@ -98,6 +103,8 @@ void registerMethod(Method* method);
 Method* getMethod(const std::string& name);
 const Methods& allMethods();
 
+
+void throw_runtime(const char* what);
 
 void throw_errno(const char* what);
 void throw_errno(const char* what, int _errno);
