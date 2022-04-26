@@ -43,7 +43,12 @@ int main(int argc, char *argv[]) {
 
         method->setup();
 
+        errno = 0;
         auto child_pid = fork();
+        if (child_pid < 0) {
+            throw_errno("fork");
+        }
+
         if (child_pid == 0) {
             method->_isParent = false;
             method->child_setup();

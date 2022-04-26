@@ -22,22 +22,22 @@ public:
 
         errno = 0;
         if (::unlink(filename) != 0 && errno != ENOENT) {
-            perror("unlink");
+            throw_errno("unlink");
         }
         errno = 0;
         if (::mkfifo(filename, 0700) == -1) {
-            perror("mkfifo");
+            throw_errno("mkfifo");
         }
 
         errno = 0;
         fd = ::open(filename, O_RDWR);
         if (fd == -1) {
-            perror("open");
+            throw_errno("open");
         }
 
         errno = 0;
         if (::unlink(filename) != 0) {
-            perror("unlink");
+            throw_errno("unlink");
         }
     }
 
@@ -46,7 +46,7 @@ public:
             // FIXME: handle EAGAIN/EINTR
             errno = 0;
             if (::write(fd, buf, params._size) != params._size) {
-                perror("write");
+                throw_errno("write");
             }
         }
     }
@@ -58,7 +58,7 @@ public:
             errno = 0;
             n = ::read(fd, buf, params._size);
             if (n == -1) {
-                perror("read");
+                throw_errno("read");
             }
 
             sum += n;

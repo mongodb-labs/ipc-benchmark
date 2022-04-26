@@ -23,12 +23,12 @@ public:
 
         errno = 0;
         if (::pipe(pipefd1) == -1) {
-            perror("pipe");
+            throw_errno("pipe");
         }
 
         errno = 0;
         if (::pipe(pipefd2) == -1) {
-            perror("pipe");
+            throw_errno("pipe");
         }
     }
 

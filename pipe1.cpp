@@ -21,7 +21,7 @@ public:
 
         errno = 0;
         if (::pipe(pipefd) == -1) {
-            perror("pipe");
+            throw_errno("pipe");
         }
     }
 
@@ -30,7 +30,7 @@ public:
             // FIXME: handle EAGAIN/EINTR
             errno = 0;
             if (::write(pipefd[1], buf, params._size) != params._size) {
-                perror("write");
+                throw_errno("write");
             }
         }
     }
@@ -42,7 +42,7 @@ public:
             errno = 0;
             n = ::read(pipefd[0], buf, params._size);
             if (n == -1) {
-                perror("read");
+                throw_errno("read");
             }
 
             sum += n;

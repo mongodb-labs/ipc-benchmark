@@ -99,8 +99,8 @@ Method* getMethod(const std::string& name);
 const Methods& allMethods();
 
 
-void perror(const char* what);
-void perror(const char* what, int _errno);
+void throw_errno(const char* what);
+void throw_errno(const char* what, int _errno);
 
 
 double getdetlatimeofday(struct timeval *begin, struct timeval *end);

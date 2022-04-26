@@ -28,19 +28,19 @@ public:
         errno = 0;
         segment_key = ftok("main", 'X');
         if (segment_key < 0) {
-            perror("ftok");
+            throw_errno("ftok");
         }
 
         errno = 0;
         segment_id = shmget(segment_key, params._size, IPC_CREAT | 0666);
         if (segment_id < 0) {
-            perror("shmget");
+            throw_errno("shmget");
         }
 
         errno = 0;
         char* addr = (char*)shmat(segment_id, NULL, 0);
         if (addr < (char*)0) {
-            perror("shmat");
+            throw_errno("shmat");
         }
         buf = (unsigned char*) addr;
 
@@ -50,7 +50,7 @@ public:
         errno = 0;
         guard_key = ftok("main", 'G');
         if (guard_key < 0) {
-            perror("guard ftok");
+            throw_errno("guard ftok");
         }
 
         errno = 0;
@@ -58,13 +58,13 @@ public:
         // It should be in a separate shmem segment.
         guard_id = shmget(guard_key, 1, IPC_CREAT | 0666);
         if (guard_id < 0) {
-            perror("guard shmget");
+            throw_errno("guard shmget");
         }
 
         errno = 0;
         guard = static_cast<std::atomic<unsigned char>*>(shmat(guard_id, NULL, 0));
         if (guard < 0) {
-            perror("guard shmat");
+            throw_errno("guard shmat");
         }
 
         guard->store(2);
@@ -87,22 +87,22 @@ public:
 
         errno = 0;
         if (shmdt(buf) < 0) {
-            perror("shmdt");
+            throw_errno("shmdt");
         }
 
         errno = 0;
         if (shmctl(segment_id, IPC_RMID, NULL) < 0) {
-            perror("shmctl rmid");
+            throw_errno("shmctl rmid");
         }
 
         errno = 0;
         if (shmdt(guard) < 0) {
-            perror("guard shmdt");
+            throw_errno("guard shmdt");
         }
 
         errno = 0;
         if (shmctl(guard_id, IPC_RMID, NULL) < 0) {
-            perror("guard shmctl rmid");
+            throw_errno("guard shmctl rmid");
         }
     }
 
@@ -123,12 +123,12 @@ public:
 
         errno = 0;
         if (shmdt(buf) < 0) {
-            perror("shmdt");
+            throw_errno("shmdt");
         }
 
         errno = 0;
         if (shmdt(guard) < 0) {
-            perror("guard shmdt");
+            throw_errno("guard shmdt");
         }
     }
 
