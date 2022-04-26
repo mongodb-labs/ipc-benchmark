@@ -240,11 +240,23 @@ void Method::execute() {
 
     parent_finish();
 
-    // FIXME
-    double tm = getdetlatimeofday(&begin, &end);
-    printf("%.0fMB/s %.0fmsg/s\n",
-        params._count * params._size * 1.0 / (tm * 1024 * 1024),
-        params._count * 1.0 / tm);
+    struct timeval diff;
+    timersub(&end, &begin, &diff);
+
+    unsigned long long diff_us = diff.tv_sec * 1000000 + diff.tv_usec;
+    std::cout << diff_us << " us  ";
+
+    double mb = params._count * params._size * 1.0 / 1048576;
+    double mb_sec = mb * 1000000 / diff_us;
+
+    std::cout << mb_sec << " MB/s  ";
+
+    double msgs_sec = params._count * 1000000 / diff_us;
+    std::cout << msgs_sec << " msgs/s  ";
+
+    std::cout << std::endl;
+
+    std::cout << std::endl;
 
     int wstatus;
     waitpid(_child_pid, &wstatus, 0);
@@ -271,11 +283,6 @@ void Method::throw_errno(const char* what, int _errno) {
 }
 
 
-
-double getdetlatimeofday(struct timeval *begin, struct timeval *end) {
-    return (end->tv_sec + end->tv_usec * 1.0 / 1000000) -
-           (begin->tv_sec + begin->tv_usec * 1.0 / 1000000);
-}
 
 void throw_runtime(const char* what) {
     throw std::runtime_error(what);

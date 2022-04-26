@@ -115,7 +115,5 @@ void throw_errno(const char* what);
 void throw_errno(const char* what, int _errno);
 
 
-double getdetlatimeofday(struct timeval *begin, struct timeval *end);
-
 }  // namespace ipcbench
 
