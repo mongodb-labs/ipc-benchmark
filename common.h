@@ -30,6 +30,7 @@ public:
     Parameters params;
     unsigned char *buf;
     std::atomic<unsigned char>* guard;
+    pid_t _child_pid = -1;
     bool _isParent = true;
 
 
@@ -37,6 +38,7 @@ public:
 
     virtual void setup() {}
 
+    virtual void pre_execute();
     virtual void execute();
 
     virtual void parent_setup() {}

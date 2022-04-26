@@ -40,6 +40,8 @@ int main(int argc, char *argv[]) {
 
         method->setup();
 
+        method->pre_execute();
+
         method->execute();
     }
 

@@ -207,15 +207,18 @@ void Method::wait_for_child_control() {
 
 
 
-void Method::execute() {
+void Method::pre_execute() {
     errno = 0;
-    auto child_pid = fork();
-    if (child_pid < 0) {
+    _child_pid = fork();
+    if (_child_pid < 0) {
         throw_errno("fork");
     }
 
-    if (child_pid == 0) {
-        _isParent = false;
+    _isParent = _child_pid != 0;
+}
+
+void Method::execute() {
+    if ( ! isParent()) {
         child_setup();
         // FIXME: sync the parent and child before kicking off
         child();
@@ -223,7 +226,6 @@ void Method::execute() {
         exit(0);
     }
 
-    _isParent = true;
     parent_setup();
 
     // FIXME: sync the parent and child before kicking off
@@ -245,8 +247,9 @@ void Method::execute() {
         params._count * 1.0 / tm);
 
     int wstatus;
-    waitpid(child_pid, &wstatus, 0);
+    waitpid(_child_pid, &wstatus, 0);
     // FIXME: check if the child failed
+    _child_pid = -1;
 }
 
 
