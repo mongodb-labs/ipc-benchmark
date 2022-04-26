@@ -83,12 +83,14 @@ protected:
     size_type total_expected = 0;
 
     virtual void read_buf(int fd);
-    virtual void send_buf_gift(int fd);
     virtual void check_total_read();
 
     virtual void write_buf(int fd);
-    virtual void receive_buf_move(int fd);
     virtual void check_total_write();
+
+
+    virtual void send_buf_gift(int fd);
+    virtual void receive_buf_move(int fd, int fd_out);
 
 
     size_type total_mangled = 0;

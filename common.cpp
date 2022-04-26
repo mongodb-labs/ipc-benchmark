@@ -126,19 +126,25 @@ void Method::send_buf_gift(int fd) {
     total_write += params._size;
 }
 
-void Method::receive_buf_move(int fd) {
-/*
-    errno = 0;
-    ssize_t res = splice(fd, ???, fd_out, ???, 1, SPLICE_F_MOVE);
-    if (res < 0) {
-        throw_errno("splice");
-    }
-    // FIXME: keep going until res == params._size ?
-    if (res != params._size) {
-        throw_errno("splice b");
+void Method::receive_buf_move(int fd, int fd_out) {
+    size_type size = page_multiple(params._size);
+
+    // need fd_out to belong to a file mmap'd to buf
+
+    size_type completed = 0;
+    size_type remaining = size;
+
+    while (completed < size) {
+        errno = 0;
+        // FIXME: off_out might need to be 0...?
+        auto n = splice(fd, NULL, fd_out, NULL, size, SPLICE_F_MOVE);
+        if (n < 0 && errno != EAGAIN && errno != EINTR) {
+            throw_errno("splice");
+        }
+        completed += n;
+        remaining -= n;
     }
     total_read += params._size;
-*/
 }
 
 
