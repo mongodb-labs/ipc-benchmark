@@ -30,6 +30,12 @@ public:
         if (::pipe(pipefd2) == -1) {
             throw_errno("pipe");
         }
+
+        // These return the actual size.
+        // FIXME: check it
+        // Unprivileged max is specified by /proc/sys/fs/pipe-max-size
+        fcntl(pipefd1[0], F_SETPIPE_SZ, 1048576);
+        fcntl(pipefd2[0], F_SETPIPE_SZ, 1048576);
     }
 
     void parent() override {

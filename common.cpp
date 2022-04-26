@@ -39,13 +39,8 @@ void Method::allocate_buf() {
     }
 }
 
-namespace {
-
-int pagesize = -1;
-
-}  // namespace
-
-void Method::allocate_buf_aligned() {
+int Method::pagesize() {
+    static int pagesize = -1;
     if (pagesize < 0) {
         errno = 0;
         pagesize = sysconf(_SC_PAGESIZE);
@@ -53,9 +48,13 @@ void Method::allocate_buf_aligned() {
             throw_errno("sysconf(_SC_PAGESIZE)");
         }
     }
+    return pagesize;
+}
 
+void Method::allocate_buf_aligned() {
     errno = 0;
-    int res = ::posix_memalign((void**)&buf, pagesize, params._size);
+    auto size = page_multiple(params._size);
+    int res = ::posix_memalign((void**)&buf, pagesize(), size);
     if (res != 0) {
         throw_errno("posix_memalign", res);
     }
@@ -107,20 +106,22 @@ void Method::check_total_write() {
 }
 
 void Method::send_buf_gift(int fd) {
-    errno = 0;
-    iovec iovec{buf, static_cast<size_t>(params._size)};
-    // FIXME: maybe ensure the size in the iovec is limited to 64k?
-    // However, note that the nr_segs arg (the 3rd arg) is limited to
-    // IOV_MAX, which is in limits.h and is 1024.
-    ssize_t res = vmsplice(fd, &iovec, 1, SPLICE_F_GIFT);
-    if (res < 0) {
-        throw_errno("vmsplice");
-    }
-    // FIXME: keep going until res == params._size
-    if (res != params._size) {
-        std::cerr << "res = " << res << std::endl;
-        std::cerr << "params._size = " << params._size << std::endl;
-        throw_errno("vmsplice b");
+    size_type size = page_multiple(params._size);
+
+    size_type completed = 0;
+    size_type remaining = size;
+
+    while (completed < size) {
+        const struct iovec iovec{buf + completed, static_cast<size_t>(remaining)};
+        const unsigned long nr_segs = 1;
+
+        errno = 0;
+        auto n = vmsplice(fd, &iovec, nr_segs, SPLICE_F_GIFT);
+        if (n < 0 && errno != EAGAIN && errno != EINTR) {
+            throw_errno("vmsplice");
+        }
+        completed += n;
+        remaining -= n;
     }
     total_write += params._size;
 }
@@ -168,8 +169,8 @@ void Method::check_total_mangled() {
         total += buf[i];
     }
     if (total != 2 * total_mangled) {
-        std::cerr << "total error: " << total << " != " << 2 * total_mangled << std::endl;
-        throw_runtime("total error");
+        std::cerr << "total mangled error: " << total << " != " << 2 * total_mangled << std::endl;
+        throw_runtime("total mangled error");
     }
 }
 

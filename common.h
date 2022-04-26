@@ -59,6 +59,19 @@ public:
         return _isParent;
     }
 
+    int pagesize();
+
+    template <typename N>
+    N page_multiple(N n) {
+        auto _pagesize = pagesize();
+        if (n % _pagesize == 0) {
+            // exact multiple of page size
+            return n;
+        } else {
+            return (n / _pagesize + 1) * _pagesize;
+        }
+    }
+
 protected:
     virtual void allocate_buf();
     virtual void allocate_buf_aligned();
