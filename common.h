@@ -28,7 +28,7 @@ class Method {
 public:
     // FIXME: these should be protected
     Parameters params;
-    unsigned char *buf;
+    unsigned char* buf;
     std::atomic<unsigned char>* guard;
     pid_t _child_pid = -1;
     bool _isParent = true;

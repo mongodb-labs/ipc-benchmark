@@ -4,7 +4,7 @@ CXXFLAGS := -g -Wall -fPIC
 
 TARGET := main
 
-OBJS := common.o pipe1.o pipe.o pipesplice.o fifo1.o fifo.o shm.o null.o
+OBJS := common.o pipe1.o pipe.o pipesplice.o fifo1.o fifo.o shm.o null.o nullcopy.o
 
 .PHONY: all clean
 
@@ -23,6 +23,7 @@ fifo.o: fifo.cpp common.h
 shm.o: shm.cpp common.h
 
 null.o: null.cpp common.h
+nullcopy.o: nullcopy.cpp common.h
 
 common.o: common.cpp common.h
 
