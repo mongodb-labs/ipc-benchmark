@@ -44,7 +44,7 @@ public:
         }
         buf = (unsigned char*) addr;
 
-        ::memset(buf, 0, params._size);
+        zero_buf();
 
 
         errno = 0;

@@ -55,14 +55,21 @@ public:
     }
 
 protected:
+    virtual void allocate_buf();
+    virtual void allocate_buf_aligned();
+    virtual void zero_buf();
+
+
     size_type total_read = 0;
     size_type total_write = 0;
     size_type total_expected = 0;
 
     virtual void read_buf(int fd);
+    virtual void send_buf_gift(int fd);
     virtual void check_total_read();
 
     virtual void write_buf(int fd);
+    virtual void receive_buf_move(int fd);
     virtual void check_total_write();
 
 
@@ -93,6 +100,7 @@ const Methods& allMethods();
 
 
 void perror(const char* what);
+void perror(const char* what, int _errno);
 
 
 double getdetlatimeofday(struct timeval *begin, struct timeval *end);

@@ -17,11 +17,7 @@ public:
     size_type sum, n;
 
     void setup() override {
-        errno = 0;
-        buf = (unsigned char*)::malloc(params._size);
-        if (buf == NULL) {
-            perror("malloc");
-        }
+        allocate_buf();
 
         errno = 0;
         if (::pipe(pipefd) == -1) {

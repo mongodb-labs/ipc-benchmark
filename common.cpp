@@ -1,3 +1,9 @@
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+#include <fcntl.h>
+#include <sys/uio.h>
+
 #include "common.h"
 
 #include <cerrno>
@@ -21,6 +27,43 @@ Method* getMethod(const std::string& name) {
 const Methods& allMethods() {
     return _methods;
 }
+
+
+
+void Method::allocate_buf() {
+    errno = 0;
+    buf = (unsigned char*)::malloc(params._size);
+    if (buf == NULL) {
+        perror("malloc");
+    }
+}
+
+namespace {
+
+int pagesize = -1;
+
+}  // namespace
+
+void Method::allocate_buf_aligned() {
+    if (pagesize < 0) {
+        errno = 0;
+        pagesize = sysconf(_SC_PAGESIZE);
+        if (pagesize < 0) {
+            perror("sysconf(_SC_PAGESIZE)");
+        }
+    }
+
+    errno = 0;
+    int res = ::posix_memalign((void**)&buf, pagesize, params._size);
+    if (res != 0) {
+        perror("posix_memalign", res);
+    }
+}
+
+void Method::zero_buf() {
+    ::memset(buf, 0, params._size);
+}
+
 
 
 void Method::read_buf(int fd) {
@@ -60,6 +103,40 @@ void Method::check_total_write() {
         std::cerr << "total_write error: " << total_write << " != " << total_expected << std::endl;
         throw std::runtime_error("total_write error");
     }
+}
+
+void Method::send_buf_gift(int fd) {
+    errno = 0;
+    iovec iovec{buf, static_cast<size_t>(params._size)};
+    // FIXME: maybe ensure the size in the iovec is limited to 64k?
+    // However, note that the nr_segs arg (the 3rd arg) is limited to
+    // IOV_MAX, which is in limits.h and is 1024.
+    ssize_t res = vmsplice(fd, &iovec, 1, SPLICE_F_GIFT);
+    if (res < 0) {
+        perror("vmsplice");
+    }
+    // FIXME: keep going until res == params._size
+    if (res != params._size) {
+        std::cerr << "res = " << res << std::endl;
+        std::cerr << "params._size = " << params._size << std::endl;
+        perror("vmsplice b");
+    }
+    total_write += params._size;
+}
+
+void Method::receive_buf_move(int fd) {
+/*
+    errno = 0;
+    ssize_t res = splice(fd, ???, fd_out, ???, 1, SPLICE_F_MOVE);
+    if (res < 0) {
+        perror("splice");
+    }
+    // FIXME: keep going until res == params._size ?
+    if (res != params._size) {
+        perror("splice b");
+    }
+    total_read += params._size;
+*/
 }
 
 
@@ -136,7 +213,11 @@ double getdetlatimeofday(struct timeval *begin, struct timeval *end) {
 }
 
 void perror(const char* what) {
-    throw std::system_error(errno, std::generic_category(), what);
+    perror(what, errno);
+}
+
+void perror(const char* what, int _errno) {
+    throw std::system_error(_errno, std::generic_category(), what);
 }
 
 }  // namespace ipcbench
