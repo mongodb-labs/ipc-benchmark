@@ -9,14 +9,14 @@ public:
         registerMethod(this);
     }
 
-    std::string name() const {
+    std::string name() const override {
         return "pipesplice";
     }
 
     int pipefd1[2] = {0};
     int pipefd2[2] = {0};
 
-    void setup() {
+    void setup() override {
         allocate_buf_aligned();
 
         zero_buf();
@@ -32,7 +32,7 @@ public:
         }
     }
 
-    void parent() {
+    void parent() override {
         for (size_type i = 0; i < params._count; i++) {
             mangle_buf();
 
@@ -45,13 +45,13 @@ public:
         }
     }
 
-    void parent_finish() {
+    void parent_finish() override {
         check_total_read();
         check_total_write();
         check_total_mangled();
     }
 
-    void child() {
+    void child() override {
         for (size_type i = 0; i < params._count; i++) {
             read_buf(pipefd1[0]);
 
@@ -64,7 +64,7 @@ public:
         }
     }
 
-    void child_finish() {
+    void child_finish() override {
         check_total_read();
         check_total_write();
         // Since this passes the memory pages themselves back and forth
