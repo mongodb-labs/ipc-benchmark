@@ -1,7 +1,7 @@
 #include "common.h"
 
 namespace ipcbench {
-namespace pipesplice {
+namespace pipesplice2 {
 
 class Method : public ipcbench::Method {
 public:
@@ -10,17 +10,13 @@ public:
     }
 
     std::string name() const override {
-        return "pipesplice";
+        return "pipesplice2";
     }
 
     int pipefd1[2] = {0};
     int pipefd2[2] = {0};
 
     void setup() override {
-        allocate_buf_aligned();
-
-        zero_buf();
-
         errno = 0;
         if (::pipe(pipefd1) == -1) {
             throw_errno("pipe");
@@ -38,6 +34,10 @@ public:
         ::fcntl(pipefd2[0], F_SETPIPE_SZ, 1048576);
     }
 
+    void parent_setup() override {
+        allocate_mmap_buf("parent");
+    }
+
     void parent() override {
         for (size_type i = 0; i < params._count; i++) {
             mangle_buf();
@@ -45,9 +45,23 @@ public:
             send_buf_gift(pipefd1[1]);
             // Since we gave away the memory, but will need to receive it
             // normally with read() into a buffer, re-allocate the buffer.
-            allocate_buf_aligned();
+            //allocate_buf_aligned();
 
-            read_buf(pipefd2[0]);
+            //read_buf(pipefd2[0]);
+            receive_buf_move(pipefd2[0], mmap_fd);
+
+            //errno = 0;
+            //int res = ::munmap(buf, params._size);
+            //if (res < 0) {
+            //    throw_errno("munmap");
+            //}
+
+            //errno = 0;
+            //void* map = ::mmap(NULL, params._size, PROT_READ | PROT_WRITE, MAP_PRIVATE, mmap_fd, 0);
+            //if (map == MAP_FAILED) {
+            //    throw_errno("mmap_fd mmap");
+            //}
+            //buf = static_cast<unsigned char*>(map);
         }
     }
 
@@ -55,18 +69,38 @@ public:
         check_total_read();
         check_total_write();
         check_total_mangled();
+
+        unlink_mmap_file();
+    }
+
+    void child_setup() override {
+        allocate_mmap_buf("child");
     }
 
     void child() override {
         for (size_type i = 0; i < params._count; i++) {
-            read_buf(pipefd1[0]);
+            //read_buf(pipefd1[0]);
+            receive_buf_move(pipefd1[0], mmap_fd);
+
+            //errno = 0;
+            //int res = munmap(buf, params._size);
+            //if (res < 0) {
+            //    throw_errno("munmap");
+            //}
+
+            //errno = 0;
+            //void* map = ::mmap(NULL, params._size, PROT_READ | PROT_WRITE, MAP_PRIVATE, mmap_fd, 0);
+            //if (map == MAP_FAILED) {
+            //    throw_errno("mmap_fd mmap");
+            //}
+            //buf = static_cast<unsigned char*>(map);
 
             mangle_buf();
 
             send_buf_gift(pipefd2[1]);
             // Since we gave away the memory, but will need to receive it
             // normally with read() into a buffer, re-allocate the buffer.
-            allocate_buf_aligned();
+            //allocate_buf_aligned();
         }
     }
 
@@ -77,6 +111,8 @@ public:
         // between the processes, the child process doesn't have access
         // to the memory at the end, so it can't check the mangling total.
         //check_total_mangled();
+
+        unlink_mmap_file();
     }
 
 } _method;

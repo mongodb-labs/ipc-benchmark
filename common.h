@@ -8,6 +8,7 @@
 #include <map>
 #include <sys/stat.h>
 #include <system_error>
+#include <sys/mman.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -32,6 +33,8 @@ public:
     std::atomic<unsigned char>* guard;
     pid_t _child_pid = -1;
     bool _isParent = true;
+    std::string mmap_filename;
+    int mmap_fd = -1;
 
 
     virtual std::string name() const = 0;
@@ -76,6 +79,8 @@ protected:
     virtual void allocate_buf();
     virtual void allocate_buf_aligned();
     virtual void zero_buf();
+    virtual void allocate_mmap_buf(const std::string& name);
+    virtual void unlink_mmap_file();
 
 
     size_type total_read = 0;

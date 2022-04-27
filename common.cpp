@@ -64,6 +64,45 @@ void Method::zero_buf() {
     ::memset(buf, 0, params._size);
 }
 
+void Method::allocate_mmap_buf(const std::string& name) {
+    // FIXME: use mkstemp() like a big boy
+    // Then there will also be no need to unlink()
+    mmap_filename = "/dev/shm/" + name;
+
+    errno = 0;
+    int res = ::unlink(mmap_filename.c_str());
+    if (res < 0 && errno != ENOENT) {  // fine if it's already not there
+        throw_errno("unlink");
+    }
+
+    errno = 0;
+    mmap_fd = ::open(mmap_filename.c_str(), O_RDWR | O_CREAT | O_EXCL, 0600);
+    if (mmap_fd < 0) {
+        throw_errno("mmap_fd open");
+    }
+
+    errno = 0;
+    res = ::ftruncate(mmap_fd, params._size);
+    if (res < 0) {
+        throw_errno("mmap_fd ftruncate");
+    }
+
+    errno = 0;
+    void* map = ::mmap(NULL, params._size, PROT_READ | PROT_WRITE, MAP_PRIVATE, mmap_fd, 0);
+    if (map == MAP_FAILED) {
+        throw_errno("mmap_fd mmap");
+    }
+    buf = static_cast<unsigned char*>(map);
+}
+
+void Method::unlink_mmap_file() {
+    errno = 0;
+    int res = ::unlink(mmap_filename.c_str());
+    if (res < 0) {
+        throw_errno("unlink");
+    }
+}
+
 
 
 void Method::read_buf(int fd) {
@@ -131,13 +170,32 @@ void Method::receive_buf_move(int fd, int fd_out) {
 
     // need fd_out to belong to a file mmap'd to buf
 
+    //errno = 0;
+    //int res = ::munmap(buf, params._size);
+    //if (res < 0) {
+    //    throw_errno("munmap");
+    //}
+
+    // NOTE: enabling these two ftruncates slows everything down a LOT... why???
+    //errno = 0;
+    //int res = ::ftruncate(fd_out, 0);
+    //if (res < 0) {
+    //    throw_errno("mmap_fd ftruncate");
+    //}
+
+    //errno = 0;
+    //res = ::ftruncate(fd_out, params._size);
+    //if (res < 0) {
+    //    throw_errno("mmap_fd ftruncate");
+    //}
+
     size_type completed = 0;
     size_type remaining = size;
 
     while (completed < size) {
         errno = 0;
-        // FIXME: off_out might need to be 0...?
-        auto n = splice(fd, NULL, fd_out, NULL, size, SPLICE_F_MOVE);
+        loff_t off_out = 0;
+        auto n = ::splice(fd, NULL, fd_out, &off_out, size, SPLICE_F_MOVE);
         if (n < 0 && errno != EAGAIN && errno != EINTR) {
             throw_errno("splice");
         }
@@ -145,6 +203,22 @@ void Method::receive_buf_move(int fd, int fd_out) {
         remaining -= n;
     }
     total_read += params._size;
+
+    // maybe try just mremap(2) after, instead of munmap prior and mmap after?
+    // doesn't seem to have any/much impact.
+    //errno = 0;
+    //void* map = ::mremap(buf, params._size, params._size, MREMAP_MAYMOVE);
+    //if (map == MAP_FAILED) {
+    //    throw_errno("mmap_fd mremap");
+    //}
+    //buf = static_cast<unsigned char*>(map);
+
+    //errno = 0;
+    //void* map = ::mmap(NULL, params._size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd_out, 0);
+    //if (map == MAP_FAILED) {
+    //    throw_errno("mmap_fd mmap");
+    //}
+    //buf = static_cast<unsigned char*>(map);
 }
 
 
