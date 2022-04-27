@@ -14,7 +14,7 @@ public:
     }
 
     void setup() {
-        allocate_buf();
+        buf = allocate_regular();
         zero_buf();
     }
 

@@ -18,7 +18,7 @@ public:
     const char* filename = ".fifo1-ipc";
 
     void setup() override {
-        allocate_buf();
+        buf = allocate_regular();
 
         errno = 0;
         if (::unlink(filename) != 0 && errno != ENOENT) {

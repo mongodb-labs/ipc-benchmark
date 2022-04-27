@@ -17,11 +17,11 @@ public:
     unsigned char* child_buf;
 
     void setup() {
-        allocate_buf();
+        buf = allocate_regular();
         zero_buf();
         parent_buf = buf;
 
-        allocate_buf();
+        buf = allocate_regular();
         zero_buf();
         child_buf = buf;
     }

@@ -17,7 +17,7 @@ public:
     int pipefd2[2] = {0};
 
     void setup() override {
-        allocate_buf_aligned();
+        buf = allocate_aligned();
 
         zero_buf();
 
@@ -45,7 +45,7 @@ public:
             send_buf_gift(pipefd1[1]);
             // Since we gave away the memory, but will need to receive it
             // normally with read() into a buffer, re-allocate the buffer.
-            allocate_buf_aligned();
+            buf = allocate_aligned();
 
             read_buf(pipefd2[0]);
         }
@@ -66,7 +66,7 @@ public:
             send_buf_gift(pipefd2[1]);
             // Since we gave away the memory, but will need to receive it
             // normally with read() into a buffer, re-allocate the buffer.
-            allocate_buf_aligned();
+            buf = allocate_aligned();
         }
     }
 

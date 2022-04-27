@@ -17,7 +17,7 @@ public:
     size_type sum, n;
 
     void setup() override {
-        allocate_buf();
+        buf = allocate_regular();
 
         errno = 0;
         if (::pipe(pipefd) == -1) {

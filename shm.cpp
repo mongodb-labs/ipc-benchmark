@@ -17,16 +17,14 @@ public:
         return "shm";
     }
 
-    key_t segment_key;
 	int segment_id;
 
-    key_t guard_key;
 	int guard_id;
 
 
     void setup() override {
         errno = 0;
-        segment_key = ftok("main", 'X');
+        key_t segment_key = ftok("main", 'X');
         if (segment_key < 0) {
             throw_errno("ftok");
         }
@@ -48,7 +46,7 @@ public:
 
 
         errno = 0;
-        guard_key = ftok("main", 'G');
+        key_t guard_key = ftok("main", 'G');
         if (guard_key < 0) {
             throw_errno("guard ftok");
         }

@@ -31,12 +31,13 @@ const Methods& allMethods() {
 
 
 
-void Method::allocate_buf() {
+unsigned char* Method::allocate_regular() {
     errno = 0;
-    buf = (unsigned char*)::malloc(params._size);
-    if (buf == NULL) {
+    auto mem = (unsigned char*)::malloc(params._size);
+    if (mem == NULL) {
         throw_errno("malloc");
     }
+    return mem;
 }
 
 int Method::pagesize() {
@@ -51,20 +52,22 @@ int Method::pagesize() {
     return pagesize;
 }
 
-void Method::allocate_buf_aligned() {
+unsigned char* Method::allocate_aligned() {
     errno = 0;
     auto size = page_multiple(params._size);
-    int res = ::posix_memalign((void**)&buf, pagesize(), size);
+    void* mem;
+    int res = ::posix_memalign(&mem, pagesize(), size);
     if (res != 0) {
         throw_errno("posix_memalign", res);
     }
+    return static_cast<unsigned char*>(mem);
 }
 
 void Method::zero_buf() {
     ::memset(buf, 0, params._size);
 }
 
-void Method::allocate_mmap_buf(const std::string& name) {
+unsigned char* Method::allocate_mmap(const std::string& name) {
     // FIXME: use mkstemp() like a big boy
     // Then there will also be no need to unlink()
     mmap_filename = "/dev/shm/" + name;
@@ -92,7 +95,7 @@ void Method::allocate_mmap_buf(const std::string& name) {
     if (map == MAP_FAILED) {
         throw_errno("mmap_fd mmap");
     }
-    buf = static_cast<unsigned char*>(map);
+    return static_cast<unsigned char*>(map);
 }
 
 void Method::unlink_mmap_file() {

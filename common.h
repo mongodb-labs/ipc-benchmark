@@ -76,10 +76,10 @@ public:
     }
 
 protected:
-    virtual void allocate_buf();
-    virtual void allocate_buf_aligned();
+    virtual unsigned char* allocate_regular();
+    virtual unsigned char* allocate_aligned();
     virtual void zero_buf();
-    virtual void allocate_mmap_buf(const std::string& name);
+    virtual unsigned char* allocate_mmap(const std::string& name);
     virtual void unlink_mmap_file();
 
 

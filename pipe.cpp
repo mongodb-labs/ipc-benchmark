@@ -17,7 +17,7 @@ public:
     int pipefd2[2] = {0};
 
     void setup() override {
-        allocate_buf();
+        buf = allocate_regular();
         zero_buf();
 
         errno = 0;
