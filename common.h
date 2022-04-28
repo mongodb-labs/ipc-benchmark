@@ -8,9 +8,11 @@
 #include <map>
 #include <sys/stat.h>
 #include <system_error>
+#include <sys/ipc.h>
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/shm.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -79,8 +81,13 @@ protected:
     virtual unsigned char* allocate_regular(size_type size = -1);
     virtual unsigned char* allocate_aligned(size_type size = -1);
     virtual void zero_buf();
+
     virtual unsigned char* allocate_mmap(const std::string& name, size_type size = -1);
     virtual void unlink_mmap_file();
+
+    virtual unsigned char* allocate_shm(int name, int* id_out, size_type size = -1);
+    virtual void detach_shm(void* mem);
+    virtual void remove_shm(int id);
 
 
     size_type total_read = 0;

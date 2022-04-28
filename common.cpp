@@ -122,6 +122,48 @@ void Method::unlink_mmap_file() {
 }
 
 
+unsigned char* Method::allocate_shm(int name, int* id_out, size_type size) {
+    if (size < 0) {
+        size = params._size;
+    }
+
+    errno = 0;
+    key_t segment_key = ftok("main", name);
+    if (segment_key < 0) {
+        throw_errno("ftok");
+    }
+
+    errno = 0;
+    int segment_id = shmget(segment_key, size, IPC_CREAT | 0666);
+    if (segment_id < 0) {
+        throw_errno("shmget");
+    }
+
+    errno = 0;
+    char* addr = (char*)shmat(segment_id, NULL, 0);
+    if (addr < (char*)0) {
+        throw_errno("shmat");
+    }
+
+    *id_out = segment_id;
+    return (unsigned char*) addr;
+}
+
+void Method::detach_shm(void* mem) {
+    errno = 0;
+    if (shmdt(mem) < 0) {
+        throw_errno("shmdt");
+    }
+}
+
+void Method::remove_shm(int id) {
+    errno = 0;
+    if (shmctl(id, IPC_RMID, NULL) < 0) {
+        throw_errno("shmctl rmid");
+    }
+}
+
+
 
 void Method::read_buf(int fd) {
     size_type completed = 0;
