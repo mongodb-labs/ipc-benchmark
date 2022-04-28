@@ -84,7 +84,7 @@ unsigned char* Method::allocate_mmap(const std::string& name, size_type size) {
 
     // FIXME: use mkstemp() like a big boy
     // Then there will also be no need to unlink()
-    mmap_filename = "/dev/shm/" + name;
+    std::string mmap_filename = "/dev/shm/" + name;
 
     errno = 0;
     int res = ::unlink(mmap_filename.c_str());
@@ -97,6 +97,8 @@ unsigned char* Method::allocate_mmap(const std::string& name, size_type size) {
     if (mmap_fd < 0) {
         throw_errno("mmap_fd open");
     }
+
+    mmap_filenames.insert(mmap_filename);
 
     errno = 0;
     res = ::ftruncate(mmap_fd, size);
@@ -113,11 +115,13 @@ unsigned char* Method::allocate_mmap(const std::string& name, size_type size) {
     return static_cast<unsigned char*>(map);
 }
 
-void Method::unlink_mmap_file() {
-    errno = 0;
-    int res = ::unlink(mmap_filename.c_str());
-    if (res < 0) {
-        throw_errno("unlink");
+void Method::unlink_mmap_files() {
+    for (const auto& mmap_filename : mmap_filenames) {
+        errno = 0;
+        int res = ::unlink(mmap_filename.c_str());
+        if (res < 0) {
+            throw_errno("unlink");
+        }
     }
 }
 

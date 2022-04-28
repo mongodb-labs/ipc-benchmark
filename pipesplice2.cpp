@@ -70,7 +70,7 @@ public:
         check_total_write();
         check_total_mangled();
 
-        unlink_mmap_file();
+        unlink_mmap_files();
     }
 
     void child_setup() override {
@@ -112,7 +112,7 @@ public:
         // to the memory at the end, so it can't check the mangling total.
         //check_total_mangled();
 
-        unlink_mmap_file();
+        unlink_mmap_files();
     }
 
 } _method;

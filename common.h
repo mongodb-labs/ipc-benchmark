@@ -6,6 +6,7 @@
 #include <functional>
 #include <iostream>
 #include <map>
+#include <set>
 #include <sys/stat.h>
 #include <system_error>
 #include <sys/ipc.h>
@@ -35,7 +36,7 @@ public:
     std::atomic<unsigned char>* guard;
     pid_t _child_pid = -1;
     bool _isParent = true;
-    std::string mmap_filename;
+    std::set<std::string> mmap_filenames;
     int mmap_fd = -1;
 
 
@@ -83,7 +84,7 @@ protected:
     virtual void zero_buf();
 
     virtual unsigned char* allocate_mmap(const std::string& name, size_type size = -1);
-    virtual void unlink_mmap_file();
+    virtual void unlink_mmap_files();
 
     virtual unsigned char* allocate_shm(int name, int* id_out, size_type size = -1);
     virtual void detach_shm(void* mem);
