@@ -13,12 +13,17 @@ public:
         return "null";
     }
 
+    std::atomic<unsigned char> initguard_actual;
+
     void setup() {
         buf = allocate_regular();
         zero_buf();
     }
 
     void pre_execute() override {
+        initguard = &initguard_actual;
+        initguard->store(1);
+
         // Don't fork.
     }
 

@@ -32,12 +32,13 @@ class Method {
 public:
     // FIXME: these should be protected
     Parameters params;
-    unsigned char* buf;
-    std::atomic<unsigned char>* guard;
+    unsigned char* buf = nullptr;
+    std::atomic<unsigned char>* guard = nullptr;
     pid_t _child_pid = -1;
     bool _isParent = true;
     std::set<std::string> mmap_filenames;
     int mmap_fd = -1;
+    std::atomic<unsigned char>* initguard = nullptr;
 
 
     virtual std::string name() const = 0;
@@ -83,8 +84,10 @@ protected:
     virtual unsigned char* allocate_aligned(size_type size = -1);
     virtual void zero_buf();
 
-    virtual unsigned char* allocate_mmap(const std::string& name, size_type size = -1);
+    virtual unsigned char* allocate_mmap(const std::string& name, bool exclusive, size_type size = -1);
     virtual void unlink_mmap_files();
+
+    virtual unsigned char* allocate_mmap_anon(size_type size = -1);
 
     virtual unsigned char* allocate_shm(int name, int* id_out, size_type size = -1);
     virtual void detach_shm(void* mem);
@@ -115,8 +118,8 @@ protected:
     static constexpr char _PARENT = 'p';
     static constexpr char _CHILD = 'c';
 
-    virtual void give_to(char target);
-    virtual void wait_for(char target);
+    virtual void give_to(std::atomic<unsigned char>* g, char target);
+    virtual void wait_for(std::atomic<unsigned char>* g, char target);
     virtual void wait_for_init();
     virtual void give_control_to_parent();
     virtual void give_control_to_child();

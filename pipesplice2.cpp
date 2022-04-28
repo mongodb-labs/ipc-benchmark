@@ -35,7 +35,7 @@ public:
     }
 
     void parent_setup() override {
-        buf = allocate_mmap("parent");
+        buf = allocate_mmap("parent", true);
     }
 
     void parent() override {
@@ -74,7 +74,7 @@ public:
     }
 
     void child_setup() override {
-        buf = allocate_mmap("child");
+        buf = allocate_mmap("child", true);
     }
 
     void child() override {

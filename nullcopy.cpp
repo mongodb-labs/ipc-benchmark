@@ -15,6 +15,7 @@ public:
 
     unsigned char* parent_buf;
     unsigned char* child_buf;
+    std::atomic<unsigned char> initguard_actual;
 
     void setup() {
         buf = allocate_regular();
@@ -27,6 +28,9 @@ public:
     }
 
     void pre_execute() override {
+        initguard = &initguard_actual;
+        initguard->store(1);
+
         // Don't fork.
     }
 

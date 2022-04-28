@@ -1,7 +1,7 @@
 #include "common.h"
 
 namespace ipcbench {
-namespace shm {
+namespace mmap {
 
 class Method : public ipcbench::Method {
 public:
@@ -10,17 +10,16 @@ public:
     }
 
     std::string name() const override {
-        return "shm";
+        return "mmap";
     }
 
-    int segment_id;
-    int guard_id;
-
     void setup() override {
-        buf = allocate_shm('X', &segment_id);
+        buf = allocate_mmap("mmap", false);
+        // The mmap'd sparse-file space is guaranteed to be zeros, but zero it all anyway
+        // to trigger all the page-faults (ie. actually create all the pages).
         zero_buf();
 
-        guard = static_cast<std::atomic<unsigned char>*>((void*)allocate_shm('G', &guard_id, 1));
+        guard = static_cast<std::atomic<unsigned char>*>((void*)allocate_mmap("guard", false, pagesize()));
     }
 
     void parent() override {
@@ -35,11 +34,7 @@ public:
     void parent_finish() override {
         check_total_mangled();
 
-        detach_shm(buf);
-        remove_shm(segment_id);
-
-        detach_shm(guard);
-        remove_shm(guard_id);
+        unlink_mmap_files();
     }
 
     void child() override {
@@ -53,9 +48,6 @@ public:
 
     void child_finish() override {
         check_total_mangled();
-
-        detach_shm(buf);
-        detach_shm(guard);
     }
 
 } _method;

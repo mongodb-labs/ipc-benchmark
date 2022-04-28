@@ -7,6 +7,8 @@
 #include "common.h"
 
 #include <cerrno>
+#include <iomanip>
+#include <limits>
 #include <sstream>
 
 namespace ipcbench {
@@ -77,23 +79,29 @@ void Method::zero_buf() {
     ::memset(buf, 0, params._size);
 }
 
-unsigned char* Method::allocate_mmap(const std::string& name, size_type size) {
+unsigned char* Method::allocate_mmap(const std::string& name, bool exclusive, size_type size) {
     if (size < 0) {
         size = params._size;
     }
 
-    // FIXME: use mkstemp() like a big boy
-    // Then there will also be no need to unlink()
     std::string mmap_filename = "/dev/shm/" + name;
+    int flags = O_RDWR | O_CREAT;
 
-    errno = 0;
-    int res = ::unlink(mmap_filename.c_str());
-    if (res < 0 && errno != ENOENT) {  // fine if it's already not there
-        throw_errno("unlink");
+    if (exclusive) {
+        flags |= O_EXCL;
+
+        // FIXME: use mkstemp() like a big boy
+        // Then there will also be no need to call unlink() here.
+
+        errno = 0;
+        int res = ::unlink(mmap_filename.c_str());
+        if (res < 0 && errno != ENOENT) {  // fine if it's already not there
+            throw_errno("unlink");
+        }
     }
 
     errno = 0;
-    mmap_fd = ::open(mmap_filename.c_str(), O_RDWR | O_CREAT | O_EXCL, 0600);
+    mmap_fd = ::open(mmap_filename.c_str(), flags, 0600);
     if (mmap_fd < 0) {
         throw_errno("mmap_fd open");
     }
@@ -101,13 +109,13 @@ unsigned char* Method::allocate_mmap(const std::string& name, size_type size) {
     mmap_filenames.insert(mmap_filename);
 
     errno = 0;
-    res = ::ftruncate(mmap_fd, size);
+    int res = ::ftruncate(mmap_fd, size);
     if (res < 0) {
         throw_errno("mmap_fd ftruncate");
     }
 
     errno = 0;
-    void* map = ::mmap(NULL, params._size, PROT_READ | PROT_WRITE, MAP_PRIVATE, mmap_fd, 0);
+    void* map = ::mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, mmap_fd, 0);
     if (map == MAP_FAILED) {
         throw_errno("mmap_fd mmap");
     }
@@ -123,6 +131,20 @@ void Method::unlink_mmap_files() {
             throw_errno("unlink");
         }
     }
+}
+
+unsigned char* Method::allocate_mmap_anon(size_type size) {
+    if (size < 0) {
+        size = params._size;
+    }
+
+    errno = 0;
+    void* map = ::mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED, 0, 0);
+    if (map == MAP_FAILED) {
+        throw_errno("anon mmap");
+    }
+
+    return static_cast<unsigned char*>(map);
 }
 
 
@@ -319,40 +341,45 @@ void Method::check_total_mangled() {
 }
 
 
-void Method::give_to(char target) {
-    guard->store(target);
+void Method::give_to(std::atomic<unsigned char>* g, char target) {
+    g->store(target);
 }
 
-void Method::wait_for(char target) {
-    while (guard->load() != target) {
+void Method::wait_for(std::atomic<unsigned char>* g, char target) {
+    while (g->load() != target) {
         // spinwait
     }
 }
 
-void Method::wait_for_init() {
-    (*guard)--;
-    wait_for(0);
-}
-
 void Method::give_control_to_parent() {
-    give_to(_PARENT);
+    give_to(guard, _PARENT);
 }
 
 void Method::give_control_to_child() {
-    give_to(_CHILD);
+    give_to(guard, _CHILD);
 }
 
 void Method::wait_for_parent_control() {
-    wait_for(_PARENT);
+    wait_for(guard, _PARENT);
 }
 
 void Method::wait_for_child_control() {
-    wait_for(_CHILD);
+    wait_for(guard, _CHILD);
 }
 
 
+void Method::wait_for_init() {
+    //std::cerr << (isParent() ? "parent" : "child") << " waiting for init..." << std::endl;
+    (*initguard)--;
+    wait_for(initguard, 0);
+    //std::cerr << (isParent() ? "parent" : "child") << " finished waiting for init" << std::endl;
+}
+
 
 void Method::pre_execute() {
+    initguard = static_cast<std::atomic<unsigned char>*>((void*)allocate_mmap_anon(pagesize()));
+    initguard->store(2);
+
     errno = 0;
     _child_pid = fork();
     if (_child_pid < 0) {
@@ -365,7 +392,7 @@ void Method::pre_execute() {
 void Method::execute() {
     if ( ! isParent()) {
         child_setup();
-        // FIXME: sync the parent and child before kicking off
+        wait_for_init();
         child();
         child_finish();
         exit(0);
@@ -373,10 +400,7 @@ void Method::execute() {
 
     parent_setup();
 
-    // FIXME: sync the parent and child before kicking off
-    // probably best would be to make a pipe pair, and then use
-    // close() each side, while the other process is using select()
-    // to notice it
+    wait_for_init();
 
     struct timeval begin, end;
     gettimeofday(&begin, NULL);
@@ -388,15 +412,17 @@ void Method::execute() {
     struct timeval diff;
     timersub(&end, &begin, &diff);
 
+    std::cout << std::fixed << std::setprecision(3);
+
     unsigned long long diff_us = diff.tv_sec * 1000000 + diff.tv_usec;
     std::cout << diff_us << " us  ";
 
     double mb = params._count * params._size * 1.0 / 1048576;
-    double mb_sec = mb * 1000000 / diff_us;
+    double mb_sec = (diff_us != 0 ? mb * 1000000 / diff_us : std::numeric_limits<double>::infinity());
 
     std::cout << mb_sec << " MB/s  ";
 
-    double msgs_sec = params._count * 1000000 / diff_us;
+    double msgs_sec = (diff_us != 0 ? params._count * 1000000 / diff_us : std::numeric_limits<double>::infinity());
     std::cout << msgs_sec << " msgs/s  ";
 
     std::cout << std::endl;
