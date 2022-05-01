@@ -64,6 +64,10 @@ unsigned char* Method::allocate_aligned(size_type size) {
         size = params._size;
     }
 
+    // https://stackoverflow.com/questions/6973995/dynamic-aligned-memory-allocation-in-c11/6974037#6974037
+    //
+    // This is also interesting because it demonstrates that the `new` operator has a way of
+    // constructing an object "in-place" in a `void*` buffer.
     errno = 0;
     auto size_actual = page_multiple(size);
     void* mem;
