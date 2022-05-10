@@ -7,6 +7,7 @@
 #include "common.h"
 
 #include <cerrno>
+#include <fstream>
 #include <iomanip>
 #include <limits>
 #include <sstream>
@@ -331,15 +332,18 @@ void Method::mangle_buf(size_type n) {
 void Method::check_total_mangled() {
     if (params._num_mangle * params._count > 255 * params._size) {
         std::cerr << "warning: num_mangle * count > 255 * size, so mangling counts cannot be verified" << std::endl;
+        checked_mangled = false;
         return;
     }
 
-    size_type total = 0;
+    checked_mangled = true;
+
+    total_mangled_sum = 0;
     for (size_type i = 0; i < params._size; i++) {
-        total += buf[i];
+        total_mangled_sum += buf[i];
     }
-    if (total != 2 * total_mangled) {
-        std::cerr << "total mangled error: " << total << " != " << 2 * total_mangled << std::endl;
+    if (total_mangled_sum != 2 * total_mangled) {
+        std::cerr << "total mangled error: " << total_mangled_sum << " != " << 2 * total_mangled << std::endl;
         throw_runtime("total mangled error");
     }
 }
@@ -411,8 +415,6 @@ void Method::execute() {
     parent();
     gettimeofday(&end, NULL);
 
-    parent_finish();
-
     struct timeval diff;
     timersub(&end, &begin, &diff);
 
@@ -431,12 +433,57 @@ void Method::execute() {
 
     std::cout << std::endl;
 
+    std::exception_ptr eptr;
+    try {
+        parent_finish();
+    } catch (...) {
+        eptr = std::current_exception();
+    }
+
     std::cout << std::endl;
+
+    {
+        std::ofstream stats("stats", std::ios_base::app);
+
+        stats << "name " << name();
+        stats << "\tsize " << params._size;
+        stats << "\tcount " << params._count;
+        stats << "\tnum_mangle " << params._num_mangle;
+
+        unsigned long long begin_us = begin.tv_sec * 1000000 + begin.tv_usec;
+        stats << "\tbegin_us " << begin_us;
+
+        unsigned long long end_us = end.tv_sec * 1000000 + end.tv_usec;
+        stats << "\tend_us " << end_us;
+
+        stats << "\tdiff_us " << diff_us;
+
+        stats << "\teptr " << static_cast<bool>(eptr);
+
+        stats << "\tmb " << mb;
+        stats << "\tmb_sec " << mb_sec;
+        stats << "\tmsgs_sec " << msgs_sec;
+
+        stats << "\ttotal_expected " << total_expected;
+        stats << "\ttotal_read " << total_read;
+        stats << "\ttotal_write " << total_write;
+
+        stats << "\tchecked_mangled " << checked_mangled;
+        stats << "\ttotal_mangled " << total_mangled;
+        stats << "\t2*total_mangled " << (2*total_mangled);
+        stats << "\ttotal_mangled_sum " << total_mangled;
+
+        stats << std::endl;
+    }
 
     int wstatus;
     waitpid(_child_pid, &wstatus, 0);
     // FIXME: check if the child failed
     _child_pid = -1;
+
+    if (eptr) {
+        std::rethrow_exception(eptr);
+    }
 }
 
 

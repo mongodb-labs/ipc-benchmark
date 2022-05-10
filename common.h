@@ -109,7 +109,9 @@ protected:
     virtual void receive_buf_move(int fd, int fd_out);
 
 
+    bool checked_mangled = false;
     size_type total_mangled = 0;
+    size_type total_mangled_sum = 0;
 
     virtual void mangle_buf(size_type n = -1);
     virtual void check_total_mangled();
