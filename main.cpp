@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
         try {
             auto other = method->CreateAnother();
 
-            std::cout << "(" << method->name() << ")" << std::endl;
+            std::cout << "(" << method->name() << " size " << test_params._size << " count " << test_params._count << " num_mangle " << test_params._num_mangle << ")" << std::endl;
             other->init(test_params);
             other->setup();
             other->pre_execute();
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 
             Parameters params{size, count, num_mangle};
 
-            std::cout << method->name() << std::endl;
+            std::cout << method->name() << " size " << params._size << " count " << params._count << " num_mangle " << params._num_mangle << std::endl;
             method->init(params);
             method->setup();
             method->pre_execute();

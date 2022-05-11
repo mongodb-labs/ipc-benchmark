@@ -403,6 +403,7 @@ void Method::init(const Parameters& p) {
     // FIXME: this can go away, if all occurences of `params` are changed to `results.params`...
     params = p;
 
+    results.name = name();
     results.params = p;
 }
 
