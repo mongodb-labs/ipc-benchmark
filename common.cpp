@@ -429,6 +429,10 @@ void ExecutionResults::humanOutput(std::ostream& out) {
     out << mb_sec << " MB/s  ";
     out << msgs_sec << " msgs/s  ";
     out << std::endl;
+
+    if (parent_finish_ex) {
+        out << "*** FAILURE: parent_finish()" << std::endl;
+    }
 }
 
 void ExecutionResults::outputStatsFile(std::string fname) {
@@ -445,7 +449,7 @@ void ExecutionResults::outputStatsFile(std::string fname) {
     stats << "\tend_us " << end_us;
     stats << "\tdiff_us " << diff_us;
 
-    stats << "\teptr " << static_cast<bool>(eptr);
+    stats << "\tparent_finish_ex " << static_cast<bool>(parent_finish_ex);
 
     stats << "\tmb " << mb;
     stats << "\tmb_sec " << mb_sec;
@@ -461,6 +465,12 @@ void ExecutionResults::outputStatsFile(std::string fname) {
     stats << "\ttotal_mangled_sum " << total_mangled_sum;
 
     stats << std::endl;
+}
+
+void ExecutionResults::rethrowExceptions() const {
+    if (parent_finish_ex) {
+        std::rethrow_exception(parent_finish_ex);
+    }
 }
 
 void Method::execute() {
@@ -485,7 +495,7 @@ void Method::execute() {
     try {
         parent_finish();
     } catch (...) {
-        results.eptr = std::current_exception();
+        results.parent_finish_ex = std::current_exception();
     }
 
     int wstatus;

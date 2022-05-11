@@ -38,7 +38,7 @@ public:
     // Set during execution (whenever is convenient)
     struct timeval begin = {0};
     struct timeval end = {0};
-    std::exception_ptr eptr;
+    std::exception_ptr parent_finish_ex;
 
     size_type total_read = 0;
     size_type total_write = 0;
@@ -66,6 +66,8 @@ public:
 
     void humanOutput(std::ostream& out);
     void outputStatsFile(std::string fname);
+
+    void rethrowExceptions() const;
 };
 
 class Method {

@@ -37,30 +37,34 @@ int main(int argc, char *argv[]) {
     Parameters test_params = params;
     test_params._count = test_count;
 
+    int exitcode = 0;
     for (auto method : methods) {
-        auto other = method->CreateAnother();
+        try {
+            auto other = method->CreateAnother();
 
-        other->init(test_params);
+            other->init(test_params);
 
 
-        std::cout << method->name() << std::endl;
-        method->init(params);
-        method->setup();
-        method->pre_execute();
-        method->execute();
+            std::cout << method->name() << std::endl;
+            method->init(params);
+            method->setup();
+            method->pre_execute();
+            method->execute();
 
-        method->results.humanOutput(std::cout);
-        std::cout << std::endl;
+            method->results.humanOutput(std::cout);
+            method->results.outputStatsFile("stats");
 
-        method->results.outputStatsFile("stats");
+            method->results.rethrowExceptions();
+            std::cout << std::endl;
 
-        // feh - just print it, and keep going
-        // and return non-zero when exiting the program
-        //if (method->results.eptr) {
-        //    std::rethrow_exception(method->results.eptr);
-        //}
-
+        } catch (const std::exception& e) {
+            std::cerr << "Exception: " << e.what() << std::endl;
+            exitcode++;
+        } catch (...) {
+            std::cerr << "Unknown exception" << std::endl;
+            exitcode++;
+        }
     }
 
-    return 0;
+    return exitcode;
 }
