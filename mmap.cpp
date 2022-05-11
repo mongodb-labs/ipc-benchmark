@@ -5,12 +5,18 @@ namespace mmap {
 
 class Method : public ipcbench::Method {
 public:
-    Method() {
+    std::string name() const override {
+        return "mmap";
+    }
+
+    Method() = default;
+
+    Method(Register) {
         registerMethod(this);
     }
 
-    std::string name() const override {
-        return "mmap";
+    std::unique_ptr<ipcbench::Method> CreateAnother() const override {
+        return std::make_unique<Method>();
     }
 
     void setup() override {
@@ -50,7 +56,7 @@ public:
         check_total_mangled();
     }
 
-} _method;
+} _method{Method::Register{}};
 
 }  // namespace
 }  // namespace ipcbench

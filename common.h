@@ -6,6 +6,7 @@
 #include <functional>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <set>
 #include <sys/stat.h>
 #include <system_error>
@@ -42,6 +43,7 @@ public:
 
 
     virtual std::string name() const = 0;
+    virtual std::unique_ptr<Method> CreateAnother() const = 0;
 
     virtual void setup() {}
 
@@ -78,6 +80,8 @@ public:
             return (n / _pagesize + 1) * _pagesize;
         }
     }
+
+    using Register = struct {};
 
 protected:
     virtual unsigned char* allocate_regular(size_type size = -1);

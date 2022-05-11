@@ -5,12 +5,18 @@ namespace null {
 
 class Method : public ipcbench::Method {
 public:
-    Method() {
+    std::string name() const {
+        return "null";
+    }
+
+    Method() = default;
+
+    Method(Register) {
         registerMethod(this);
     }
 
-    std::string name() const {
-        return "null";
+    std::unique_ptr<ipcbench::Method> CreateAnother() const override {
+        return std::make_unique<Method>();
     }
 
     std::atomic<unsigned char> initguard_actual;
@@ -59,8 +65,7 @@ public:
         throw_runtime("null child");
     }
 
-
-} _method;
+} _method{Method::Register{}};
 
 }  // namespace
 }  // namespace ipcbench

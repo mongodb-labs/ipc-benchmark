@@ -5,12 +5,18 @@ namespace pipe {
 
 class Method : public ipcbench::Method {
 public:
-    Method() {
+    std::string name() const override {
+        return "pipe";
+    }
+
+    Method() = default;
+
+    Method(Register) {
         registerMethod(this);
     }
 
-    std::string name() const override {
-        return "pipe";
+    std::unique_ptr<ipcbench::Method> CreateAnother() const override {
+        return std::make_unique<Method>();
     }
 
     int pipefd1[2] = {0};
@@ -61,7 +67,7 @@ public:
         check_total_mangled();
     }
 
-} _method;
+} _method{Method::Register{}};
 
 }  // namespace
 }  // namespace ipcbench

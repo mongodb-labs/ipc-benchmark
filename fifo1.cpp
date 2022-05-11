@@ -5,12 +5,18 @@ namespace fifo1 {
 
 class Method : public ipcbench::Method {
 public:
-    Method() {
+    std::string name() const override {
+        return "fifo1";
+    }
+
+    Method() = default;
+
+    Method(Register) {
         registerMethod(this);
     }
 
-    std::string name() const override {
-        return "fifo1";
+    std::unique_ptr<ipcbench::Method> CreateAnother() const override {
+        return std::make_unique<Method>();
     }
 
     int fd;
@@ -70,7 +76,7 @@ public:
         }
     }
 
-} _method;
+} _method{Method::Register{}};
 
 }  // namespace
 }  // namespace ipcbench

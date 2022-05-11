@@ -5,12 +5,18 @@ namespace pipesplice2 {
 
 class Method : public ipcbench::Method {
 public:
-    Method() {
+    std::string name() const override {
+        return "pipesplice2";
+    }
+
+    Method() = default;
+
+    Method(Register) {
         registerMethod(this);
     }
 
-    std::string name() const override {
-        return "pipesplice2";
+    std::unique_ptr<ipcbench::Method> CreateAnother() const override {
+        return std::make_unique<Method>();
     }
 
     int pipefd1[2] = {0};
@@ -115,7 +121,7 @@ public:
         unlink_mmap_files();
     }
 
-} _method;
+} _method{Method::Register{}};
 
 }  // namespace
 }  // namespace ipcbench

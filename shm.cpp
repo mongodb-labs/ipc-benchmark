@@ -5,12 +5,18 @@ namespace shm {
 
 class Method : public ipcbench::Method {
 public:
-    Method() {
+    std::string name() const override {
+        return "shm";
+    }
+
+    Method() = default;
+
+    Method(Register) {
         registerMethod(this);
     }
 
-    std::string name() const override {
-        return "shm";
+    std::unique_ptr<ipcbench::Method> CreateAnother() const override {
+        return std::make_unique<Method>();
     }
 
     int segment_id;
@@ -58,7 +64,7 @@ public:
         detach_shm(guard);
     }
 
-} _method;
+} _method{Method::Register{}};
 
 }  // namespace
 }  // namespace ipcbench

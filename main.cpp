@@ -33,7 +33,16 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    size_type test_count = 2;
+    Parameters test_params = params;
+    test_params._count = test_count;
+
     for (auto method : methods) {
+        auto other = method->CreateAnother();
+
+        other->init(test_params);
+
+
         method->init(params);
 
         std::cout << method->name() << std::endl;

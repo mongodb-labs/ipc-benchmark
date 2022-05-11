@@ -5,12 +5,18 @@ namespace nullcopy {
 
 class Method : public ipcbench::Method {
 public:
-    Method() {
+    std::string name() const {
+        return "nullcopy";
+    }
+
+    Method() = default;
+
+    Method(Register) {
         registerMethod(this);
     }
 
-    std::string name() const {
-        return "nullcopy";
+    std::unique_ptr<ipcbench::Method> CreateAnother() const override {
+        return std::make_unique<Method>();
     }
 
     unsigned char* parent_buf;
@@ -73,8 +79,7 @@ public:
         throw_runtime("nullcopy child");
     }
 
-
-} _method;
+} _method{Method::Register{}};
 
 }  // namespace
 }  // namespace ipcbench
