@@ -55,7 +55,6 @@ int main(int argc, char *argv[]) {
             method->results.outputStatsFile("stats");
 
             method->results.rethrowExceptions();
-            std::cout << std::endl;
 
         } catch (const std::exception& e) {
             std::cerr << "Exception: " << e.what() << std::endl;
@@ -64,6 +63,7 @@ int main(int argc, char *argv[]) {
             std::cerr << "Unknown exception" << std::endl;
             exitcode++;
         }
+        std::cout << std::endl;
     }
 
     return exitcode;

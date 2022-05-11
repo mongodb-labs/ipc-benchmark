@@ -38,6 +38,9 @@ public:
     // Set during execution (whenever is convenient)
     struct timeval begin = {0};
     struct timeval end = {0};
+
+    std::exception_ptr parent_setup_ex;
+    std::exception_ptr parent_ex;
     std::exception_ptr parent_finish_ex;
 
     size_type total_read = 0;

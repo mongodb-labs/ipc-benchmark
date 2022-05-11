@@ -430,6 +430,12 @@ void ExecutionResults::humanOutput(std::ostream& out) {
     out << msgs_sec << " msgs/s  ";
     out << std::endl;
 
+    if (parent_setup_ex) {
+        out << "*** FAILURE: parent_setup()" << std::endl;
+    }
+    if (parent_ex) {
+        out << "*** FAILURE: parent()" << std::endl;
+    }
     if (parent_finish_ex) {
         out << "*** FAILURE: parent_finish()" << std::endl;
     }
@@ -449,6 +455,8 @@ void ExecutionResults::outputStatsFile(std::string fname) {
     stats << "\tend_us " << end_us;
     stats << "\tdiff_us " << diff_us;
 
+    stats << "\tparent_setup_ex " << static_cast<bool>(parent_setup_ex);
+    stats << "\tparent_ex " << static_cast<bool>(parent_ex);
     stats << "\tparent_finish_ex " << static_cast<bool>(parent_finish_ex);
 
     stats << "\tmb " << mb;
@@ -468,6 +476,12 @@ void ExecutionResults::outputStatsFile(std::string fname) {
 }
 
 void ExecutionResults::rethrowExceptions() const {
+    if (parent_setup_ex) {
+        std::rethrow_exception(parent_setup_ex);
+    }
+    if (parent_ex) {
+        std::rethrow_exception(parent_ex);
+    }
     if (parent_finish_ex) {
         std::rethrow_exception(parent_finish_ex);
     }
@@ -482,20 +496,31 @@ void Method::execute() {
         exit(0);
     }
 
-    parent_setup();
-
-    wait_for_init();
-
-    gettimeofday(&results.begin, NULL);
-    parent();
-    gettimeofday(&results.end, NULL);
-
-    results.updateDerivedFields();
-
     try {
-        parent_finish();
+
+        parent_setup();
+
+        wait_for_init();
+
+        try {
+            gettimeofday(&results.begin, NULL);
+            parent();
+            gettimeofday(&results.end, NULL);
+
+            results.updateDerivedFields();
+
+            try {
+                parent_finish();
+            } catch (...) {
+                results.parent_finish_ex = std::current_exception();
+            }
+
+        } catch (...) {
+            results.parent_ex = std::current_exception();
+        }
+
     } catch (...) {
-        results.parent_finish_ex = std::current_exception();
+        results.parent_setup_ex = std::current_exception();
     }
 
     int wstatus;
