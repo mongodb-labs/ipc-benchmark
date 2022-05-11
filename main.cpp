@@ -43,15 +43,23 @@ int main(int argc, char *argv[]) {
         other->init(test_params);
 
 
-        method->init(params);
-
         std::cout << method->name() << std::endl;
-
+        method->init(params);
         method->setup();
-
         method->pre_execute();
-
         method->execute();
+
+        method->results.humanOutput(std::cout);
+        std::cout << std::endl;
+
+        method->results.outputStatsFile("stats");
+
+        // feh - just print it, and keep going
+        // and return non-zero when exiting the program
+        //if (method->results.eptr) {
+        //    std::rethrow_exception(method->results.eptr);
+        //}
+
     }
 
     return 0;

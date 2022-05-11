@@ -488,19 +488,10 @@ void Method::execute() {
         results.eptr = std::current_exception();
     }
 
-    results.humanOutput(std::cout);
-    std::cout << std::endl;
-
-    results.outputStatsFile("stats");
-
     int wstatus;
     waitpid(_child_pid, &wstatus, 0);
     // FIXME: check if the child failed
     _child_pid = -1;
-
-    if (results.eptr) {
-        std::rethrow_exception(results.eptr);
-    }
 }
 
 
