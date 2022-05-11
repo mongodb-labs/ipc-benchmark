@@ -49,7 +49,7 @@ public:
 
             // "Send" to the "child"
             ::memcpy(child_buf, parent_buf, params._size);
-            total_write += params._size;
+            results.total_write += params._size;
 
             // Mangle as the "child"
             _isParent = false;
@@ -58,7 +58,7 @@ public:
 
             // "Receive" from the "child"
             ::memcpy(parent_buf, child_buf, params._size);
-            total_read += params._size;
+            results.total_read += params._size;
         }
         _isParent = true;
         buf = parent_buf;
@@ -66,7 +66,7 @@ public:
         // We're doing all the mangling, so check_total_mangled shouldn't
         // have a factor of 2 for the "other side".  Instead, just halve
         // this value, to cancel out the factor of 2 in check_total_mangled().
-        total_mangled = total_mangled / 2;
+        results.total_mangled /= 2;
     }
 
     void parent_finish() override {

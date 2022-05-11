@@ -28,11 +28,52 @@ struct Parameters {
     size_type _num_mangle = 0;
 };
 
+class ExecutionResults {
+public:
+    // Specified before execution
+    std::string name;
+    Parameters params;
+
+
+    // Set during execution (whenever is convenient)
+    struct timeval begin = {0};
+    struct timeval end = {0};
+    std::exception_ptr eptr;
+
+    size_type total_read = 0;
+    size_type total_write = 0;
+
+
+    // Derived fields
+    struct timeval diff = {0};
+
+    unsigned long long begin_us = 0;
+    unsigned long long end_us = 0;
+    unsigned long long diff_us = 0;
+
+    double mb = 0;
+    double mb_sec = 0;
+    double msgs_sec = 0;
+
+    size_type total_expected = 0;
+
+    bool checked_mangled = false;
+    size_type total_mangled = 0;
+    size_type total_mangled_sum = 0;
+
+
+    void updateDerivedFields();
+
+    void humanOutput(std::ostream& out);
+    void outputStatsFile(std::string fname);
+};
 
 class Method {
 public:
     // FIXME: these should be protected
     Parameters params;
+    ExecutionResults results;
+
     unsigned char* buf = nullptr;
     std::atomic<unsigned char>* guard = nullptr;
     pid_t _child_pid = -1;
@@ -59,10 +100,7 @@ public:
     virtual void parent_finish() {}
     virtual void child_finish() {}
 
-    virtual void init(const Parameters& p) {
-        params = p;
-        total_expected = params._count * params._size;
-    }
+    virtual void init(const Parameters& p);
 
     bool isParent() const {
         return _isParent;
@@ -98,10 +136,6 @@ protected:
     virtual void remove_shm(int id);
 
 
-    size_type total_read = 0;
-    size_type total_write = 0;
-    size_type total_expected = 0;
-
     virtual void read_buf(int fd);
     virtual void check_total_read();
 
@@ -112,10 +146,6 @@ protected:
     virtual void send_buf_gift(int fd);
     virtual void receive_buf_move(int fd, int fd_out);
 
-
-    bool checked_mangled = false;
-    size_type total_mangled = 0;
-    size_type total_mangled_sum = 0;
 
     virtual void mangle_buf(size_type n = -1);
     virtual void check_total_mangled();

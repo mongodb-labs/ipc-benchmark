@@ -39,20 +39,20 @@ public:
             _isParent = true;
             mangle_buf();
 
-            total_write += params._size;
+            results.total_write += params._size;
 
             // Mangle as the "child"
             _isParent = false;
             mangle_buf();
 
-            total_read += params._size;
+            results.total_read += params._size;
         }
         _isParent = true;
 
         // We're doing all the mangling, so check_total_mangled shouldn't
         // have a factor of 2 for the "other side".  Instead, just halve
         // this value, to cancel out the factor of 2 in check_total_mangled().
-        total_mangled = total_mangled / 2;
+        results.total_mangled /= 2;
     }
 
     void parent_finish() override {

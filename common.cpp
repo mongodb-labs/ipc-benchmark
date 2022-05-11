@@ -208,12 +208,13 @@ void Method::read_buf(int fd) {
         completed += n;
         remaining -= n;
     }
-    total_read += params._size;
+    results.total_read += params._size;
 }
 
 void Method::check_total_read() {
-    if (total_read != total_expected) {
-        std::cerr << "total_read error: " << total_read << " != " << total_expected << std::endl;
+    results.updateDerivedFields();
+    if (results.total_read != results.total_expected) {
+        std::cerr << "total_read error: " << results.total_read << " != " << results.total_expected << std::endl;
         throw_runtime("total_read error");
     }
 }
@@ -225,12 +226,13 @@ void Method::write_buf(int fd) {
     if (::write(fd, buf, params._size) != params._size) {
         throw_errno("write");
     }
-    total_write += params._size;
+    results.total_write += params._size;
 }
 
 void Method::check_total_write() {
-    if (total_write != total_expected) {
-        std::cerr << "total_write error: " << total_write << " != " << total_expected << std::endl;
+    results.updateDerivedFields();
+    if (results.total_write != results.total_expected) {
+        std::cerr << "total_write error: " << results.total_write << " != " << results.total_expected << std::endl;
         throw_runtime("total_write error");
     }
 }
@@ -253,7 +255,7 @@ void Method::send_buf_gift(int fd) {
         completed += n;
         remaining -= n;
     }
-    total_write += params._size;
+    results.total_write += params._size;
 }
 
 void Method::receive_buf_move(int fd, int fd_out) {
@@ -293,7 +295,7 @@ void Method::receive_buf_move(int fd, int fd_out) {
         completed += n;
         remaining -= n;
     }
-    total_read += params._size;
+    results.total_read += params._size;
 
     // maybe try just mremap(2) after, instead of munmap prior and mmap after?
     // doesn't seem to have any/much impact.
@@ -326,24 +328,24 @@ void Method::mangle_buf(size_type n) {
         r = r / 2 * 2 + adjust;
         buf[r]++;
     }
-    total_mangled += n;
+    results.total_mangled += n;
 }
 
 void Method::check_total_mangled() {
     if (params._num_mangle * params._count > 255 * params._size) {
         std::cerr << "warning: num_mangle * count > 255 * size, so mangling counts cannot be verified" << std::endl;
-        checked_mangled = false;
+        results.checked_mangled = false;
         return;
     }
 
-    checked_mangled = true;
+    results.checked_mangled = true;
 
-    total_mangled_sum = 0;
+    results.total_mangled_sum = 0;
     for (size_type i = 0; i < params._size; i++) {
-        total_mangled_sum += buf[i];
+        results.total_mangled_sum += buf[i];
     }
-    if (total_mangled_sum != 2 * total_mangled) {
-        std::cerr << "total mangled error: " << total_mangled_sum << " != " << 2 * total_mangled << std::endl;
+    if (results.total_mangled_sum != 2 * results.total_mangled) {
+        std::cerr << "total mangled error: " << results.total_mangled_sum << " != " << 2 * results.total_mangled << std::endl;
         throw_runtime("total mangled error");
     }
 }
@@ -397,6 +399,70 @@ void Method::pre_execute() {
     _isParent = _child_pid != 0;
 }
 
+void Method::init(const Parameters& p) {
+    // FIXME: this can go away, if all occurences of `params` are changed to `results.params`...
+    params = p;
+
+    results.params = p;
+}
+
+void ExecutionResults::updateDerivedFields() {
+    total_expected = params._count * params._size;
+
+    timersub(&end, &begin, &diff);
+
+    begin_us = begin.tv_sec * 1000000 + begin.tv_usec;
+    end_us = end.tv_sec * 1000000 + end.tv_usec;
+    diff_us = diff.tv_sec * 1000000 + diff.tv_usec;
+
+    mb = params._count * params._size * 1.0 / 1048576;
+    mb_sec = (diff_us != 0 ? mb * 1000000 / diff_us : std::numeric_limits<double>::infinity());
+
+    msgs_sec = (diff_us != 0 ? params._count * 1000000 / diff_us : std::numeric_limits<double>::infinity());
+}
+
+void ExecutionResults::humanOutput(std::ostream& out) {
+    updateDerivedFields();
+
+    out << std::fixed << std::setprecision(3);
+    out << diff_us << " us  ";
+    out << mb_sec << " MB/s  ";
+    out << msgs_sec << " msgs/s  ";
+    out << std::endl;
+}
+
+void ExecutionResults::outputStatsFile(std::string fname) {
+    updateDerivedFields();
+
+    std::ofstream stats(fname, std::ios_base::app);
+
+    stats << "name " << name;
+    stats << "\tsize " << params._size;
+    stats << "\tcount " << params._count;
+    stats << "\tnum_mangle " << params._num_mangle;
+
+    stats << "\tbegin_us " << begin_us;
+    stats << "\tend_us " << end_us;
+    stats << "\tdiff_us " << diff_us;
+
+    stats << "\teptr " << static_cast<bool>(eptr);
+
+    stats << "\tmb " << mb;
+    stats << "\tmb_sec " << mb_sec;
+    stats << "\tmsgs_sec " << msgs_sec;
+
+    stats << "\ttotal_expected " << total_expected;
+    stats << "\ttotal_read " << total_read;
+    stats << "\ttotal_write " << total_write;
+
+    stats << "\tchecked_mangled " << checked_mangled;
+    stats << "\ttotal_mangled " << total_mangled;
+    stats << "\t2*total_mangled " << (2*total_mangled);
+    stats << "\ttotal_mangled_sum " << total_mangled_sum;
+
+    stats << std::endl;
+}
+
 void Method::execute() {
     if ( ! isParent()) {
         child_setup();
@@ -410,79 +476,30 @@ void Method::execute() {
 
     wait_for_init();
 
-    struct timeval begin, end;
-    gettimeofday(&begin, NULL);
+    gettimeofday(&results.begin, NULL);
     parent();
-    gettimeofday(&end, NULL);
+    gettimeofday(&results.end, NULL);
 
-    struct timeval diff;
-    timersub(&end, &begin, &diff);
+    results.updateDerivedFields();
 
-    std::cout << std::fixed << std::setprecision(3);
-
-    unsigned long long diff_us = diff.tv_sec * 1000000 + diff.tv_usec;
-    std::cout << diff_us << " us  ";
-
-    double mb = params._count * params._size * 1.0 / 1048576;
-    double mb_sec = (diff_us != 0 ? mb * 1000000 / diff_us : std::numeric_limits<double>::infinity());
-
-    std::cout << mb_sec << " MB/s  ";
-
-    double msgs_sec = (diff_us != 0 ? params._count * 1000000 / diff_us : std::numeric_limits<double>::infinity());
-    std::cout << msgs_sec << " msgs/s  ";
-
-    std::cout << std::endl;
-
-    std::exception_ptr eptr;
     try {
         parent_finish();
     } catch (...) {
-        eptr = std::current_exception();
+        results.eptr = std::current_exception();
     }
 
+    results.humanOutput(std::cout);
     std::cout << std::endl;
 
-    {
-        std::ofstream stats("stats", std::ios_base::app);
-
-        stats << "name " << name();
-        stats << "\tsize " << params._size;
-        stats << "\tcount " << params._count;
-        stats << "\tnum_mangle " << params._num_mangle;
-
-        unsigned long long begin_us = begin.tv_sec * 1000000 + begin.tv_usec;
-        stats << "\tbegin_us " << begin_us;
-
-        unsigned long long end_us = end.tv_sec * 1000000 + end.tv_usec;
-        stats << "\tend_us " << end_us;
-
-        stats << "\tdiff_us " << diff_us;
-
-        stats << "\teptr " << static_cast<bool>(eptr);
-
-        stats << "\tmb " << mb;
-        stats << "\tmb_sec " << mb_sec;
-        stats << "\tmsgs_sec " << msgs_sec;
-
-        stats << "\ttotal_expected " << total_expected;
-        stats << "\ttotal_read " << total_read;
-        stats << "\ttotal_write " << total_write;
-
-        stats << "\tchecked_mangled " << checked_mangled;
-        stats << "\ttotal_mangled " << total_mangled;
-        stats << "\t2*total_mangled " << (2*total_mangled);
-        stats << "\ttotal_mangled_sum " << total_mangled;
-
-        stats << std::endl;
-    }
+    results.outputStatsFile("stats");
 
     int wstatus;
     waitpid(_child_pid, &wstatus, 0);
     // FIXME: check if the child failed
     _child_pid = -1;
 
-    if (eptr) {
-        std::rethrow_exception(eptr);
+    if (results.eptr) {
+        std::rethrow_exception(results.eptr);
     }
 }
 
