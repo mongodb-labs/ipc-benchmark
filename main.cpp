@@ -12,9 +12,15 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    size_type size = std::atoi(argv[1]);
-    size_type target_runtime_us = std::atoi(argv[2]);
-    size_type num_mangle = std::atoi(argv[3]);
+    size_type size = std::atoll(argv[1]);
+    size_type target_runtime_us = std::atoll(argv[2]);
+    size_type num_mangle = std::atoll(argv[3]);
+
+    if (size % 4 != 0) {
+        size_type new_size = (size / 4 + 1) * 4;
+        std::cerr << "Warning: size of " << size << " is not a multiple of 4, rounding up to " << new_size << std::endl;
+        size = new_size;
+    }
 
     std::list<Method*> methods;
     if (argc > 4) {
