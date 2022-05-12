@@ -38,6 +38,12 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    std::cout << "main size " << size << " target_runtime_us " << target_runtime_us << " num_mangle " << num_mangle;
+    for (auto method : methods) {
+        std::cout << " " << method->name();
+    }
+    std::cout << std::endl;
+
     Parameters test_params{size, 10, num_mangle};
     int exitcode = 0;
     for (auto method : methods) {
