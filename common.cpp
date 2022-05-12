@@ -319,21 +319,20 @@ void Method::mangle_buf(size_type n) {
     if (n == -1) {
         n = params._num_mangle;
     }
-    // ensure no collisions between parent/child manglings
-    // parent only does even bytes
-    // child only does odd bytes
-    size_type adjust = isParent() ? 0 : 1;
     for (size_type i = 0; i < n; i++) {
         size_type r = rand() % params._size;
-        r = r / 2 * 2 + adjust;
-        buf[r]++;
+        r /= 4;  // align
+        (reinterpret_cast<uint32_t*>(buf))[r]++;
     }
     results.total_mangled += n;
 }
 
 void Method::check_total_mangled() {
-    if (params._num_mangle * params._count > 255 * params._size) {
-        std::cerr << "warning: num_mangle * count > 255 * size, so mangling counts cannot be verified" << std::endl;
+    auto max_mangle_value = 1LL<<32;
+    auto lhs = 2 * params._num_mangle * params._count;
+    auto rhs = max_mangle_value * params._size / 4;
+    if (lhs > rhs) {
+        std::cerr << "warning: 2 * num_mangle * count (" << lhs << ") > " << max_mangle_value << " * size / 4 (" << rhs << "), so mangling counts cannot be verified" << std::endl;
         results.checked_mangled = false;
         return;
     }
@@ -341,11 +340,11 @@ void Method::check_total_mangled() {
     results.checked_mangled = true;
 
     results.total_mangled_sum = 0;
-    for (size_type i = 0; i < params._size; i++) {
-        results.total_mangled_sum += buf[i];
+    for (size_type i = 0; i < params._size / 4; i++) {
+        results.total_mangled_sum += (reinterpret_cast<uint32_t*>(buf))[i];
     }
     if (results.total_mangled_sum != 2 * results.total_mangled) {
-        std::cerr << "total mangled error: " << results.total_mangled_sum << " != " << 2 * results.total_mangled << std::endl;
+        std::cerr << "total mangled error: sum (" << results.total_mangled_sum << ") != expected (" << 2 * results.total_mangled << ")" << std::endl;
         throw_runtime("total mangled error");
     }
 }
