@@ -69,20 +69,34 @@ int main(int argc, char *argv[]) {
             if (count == 0) {
                 count = 1;
             }
-            std::cout << test_params._count << " iterations took " << other->results.diff_us << " us, so running " << count << " iterations" << std::endl;
 
-            Parameters params{size, count, num_mangle};
+            if (count <= test_params._count) {
+                // The test run already took longer than the target duration.
+                // So don't bother running it again, just use the test run's results as the actual results.
+                // (Despite the test also being a "pre-warm" phase - it's still longer than what the "actual" run would take,
+                // and so should hopefully have less noise.)
 
-            std::cout << method->name() << " size " << params._size << " count " << params._count << " num_mangle " << params._num_mangle << std::endl;
-            method->init(params);
-            method->setup();
-            method->pre_execute();
-            method->execute();
+                std::cout << test_params._count << " iterations took " << other->results.diff_us << " us, which is over the target runtime of " << target_runtime_us << " us, so using this as the actual results" << std::endl;
 
-            method->results.humanOutput(std::cout);
-            method->results.outputStatsFile("stats");
+                other->results.humanOutput(std::cout);
+                other->results.outputStatsFile("stats");
 
-            method->results.rethrowExceptions();
+            } else {
+                std::cout << test_params._count << " iterations took " << other->results.diff_us << " us, so running " << count << " iterations" << std::endl;
+
+                Parameters params{size, count, num_mangle};
+
+                std::cout << method->name() << " size " << params._size << " count " << params._count << " num_mangle " << params._num_mangle << std::endl;
+                method->init(params);
+                method->setup();
+                method->pre_execute();
+                method->execute();
+
+                method->results.humanOutput(std::cout);
+                method->results.outputStatsFile("stats");
+
+                method->results.rethrowExceptions();
+            }
 
         } catch (const std::exception& e) {
             std::cerr << "Exception: " << e.what() << std::endl;
