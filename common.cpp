@@ -498,7 +498,6 @@ void Method::execute() {
     }
 
     try {
-
         parent_setup();
 
         wait_for_init();
@@ -507,21 +506,21 @@ void Method::execute() {
             gettimeofday(&results.begin, NULL);
             parent();
             gettimeofday(&results.end, NULL);
-
-            results.updateDerivedFields();
-
-            try {
-                parent_finish();
-            } catch (...) {
-                results.parent_finish_ex = std::current_exception();
-            }
-
         } catch (...) {
             results.parent_ex = std::current_exception();
         }
-
     } catch (...) {
         results.parent_setup_ex = std::current_exception();
+    }
+
+    results.updateDerivedFields();
+
+    // parent_finish() should still be attempted, even if parent() or parent_setup() have failed,
+    // because otherwise stuff might be left lying around (eg. shm segments).
+    try {
+        parent_finish();
+    } catch (...) {
+        results.parent_finish_ex = std::current_exception();
     }
 
     int wstatus;
