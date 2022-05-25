@@ -1,0 +1,68 @@
+#!/bin/bash
+
+exec >> >(tee -a "$0".log) 2>&1
+
+#methods=(null nullcopy pipe pipesplice pipesplice2 shm mmap mmapanon)
+#methods=(null nullcopy pipe pipesplice2 shm mmap mmapanon)
+#methods=(null nullcopy pipe pipesplice shm mmap mmapanon)
+methods=(null nullcopy pipe shm mmap mmapanon)
+
+function doit {
+    local size="$1"; shift
+    local target_us="$1"; shift
+
+    #local num_mangles=( 0 "$(($size / 2))" "$size" )
+    #local num_mangles=( 0 "$K" "$((16*$K))" "$M" "$((16*$M))" )
+    local num_mangles=( 0 "$K" "$((2*$K))" "$((4*$K))" "$((8*$K))" "$((16*$K))" "$((32*$K))" "$((64*$K))" "$((128*$K))" "$((256*$K))" "$((512*$K))" "$M" )
+
+    # just for the quick tests
+    #count=2
+    #target_us=1000000
+
+    local num_mangle
+    for num_mangle in "${num_mangles[@]}"; do
+        echo
+        echo ------------
+        echo
+        local method
+        for method in "${methods[@]}"; do
+            date
+            echo ./main "$size" "$target_us" "$num_mangle" "$method"
+            ./main "$size" "$target_us" "$num_mangle" "$method"
+            date
+        done
+        echo
+        echo ------------
+        echo
+    done
+}
+
+if [ -e stats ]; then
+    mv -i stats stats.old.$(date '+%s.%N')
+fi
+
+B=1
+K=$((1024*$B))
+M=$((1024*$K))
+G=$((1024*$M))
+
+run="$(date '+%Y%m%d-%H%M%S')"
+
+#doit $((128*$B))  $((64*$M))
+#doit   $((4*$K))   $((2*$M))
+#doit $((128*$K))  $((64*$K))
+#doit   $((1*$M))   $((8*$K))
+#doit  $((16*$M)) $((512*$B))
+#doit $((128*$M))  $((64*$B))
+##doit   $((1*$G))   $((8*$B))
+
+doit $((128*$B)) 10000000
+doit   $((4*$K)) 10000000
+doit $((128*$K)) 10000000
+doit   $((1*$M)) 10000000
+doit  $((16*$M)) 10000000
+doit $((128*$M)) 10000000
+#doit   $((1*$G)) 10000000
+
+mv -i stats stats."$run"
+

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+for stats_file; do
+    for i in $(awk '{print $2}' "$stats_file" | sort | uniq); do
+        awk -f stats-fields -e 'f["name"] == "'"$i"'" { print f["size"], f["num_mangle"], f["mb_sec"], f["msgs_sec"]}' "$stats_file" > "$stats_file"."$i"
+    done
+done

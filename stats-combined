@@ -1,0 +1,84 @@
+#!/bin/bash
+
+set -e
+
+for stats_file; do
+    awk -f stats-fields -e '
+        function mangle_name(n) {
+            if (n == "null")     n = "01_" n;
+            if (n == "nullcopy") n = "02_" n;
+            if (n == "shm")      n = "03_" n;
+            if (n == "mmap")     n = "04_" n;
+            if (n == "mmapanon") n = "05_" n;
+            # any others just sort lexically
+            return n;
+        }
+
+        function unmangle_name(n) {
+            return gensub("^[0-9][0-9]_", "", 1, n);
+        }
+
+        {
+            f["name"] = mangle_name(f["name"]);
+
+            sizes[f["size"]] = 1;
+            num_mangles[f["num_mangle"]] = 1;
+            names[f["name"]] = 1;
+
+            mb_sec[f["size"],f["num_mangle"],f["name"]] = f["mb_sec"];
+            msgs_sec[f["size"],f["num_mangle"],f["name"]] = f["msgs_sec"];
+        }
+
+        function print_header(first, second) {
+            printf("%s\t%s", first, second);
+            for (i_name = 1; i_name <= num_names; i_name++) {
+                printf("\t%s", unmangle_name(names[i_name]) " MB/s");
+            }
+            printf("\t\t%s\t%s", first, second);
+            for (i_name = 1; i_name <= num_names; i_name++) {
+                printf("\t%s", unmangle_name(names[i_name]) " msgs/s");
+            }
+            printf("\n");
+        }
+
+        function print_line(first, second, i_size, i_num_mangle) {
+            printf("%s\t%s", first, second);
+            for (i_name = 1; i_name <= num_names; i_name++) {
+                printf("\t%s", mb_sec[sizes[i_size],num_mangles[i_num_mangle],names[i_name]]);
+            }
+            printf("\t\t%s\t%s", first, second);
+            for (i_name = 1; i_name <= num_names; i_name++) {
+                printf("\t%s", msgs_sec[sizes[i_size],num_mangles[i_num_mangle],names[i_name]]);
+            }
+            printf("\n");
+        }
+
+        END {
+            num_sizes = asorti(sizes, sizes, "@ind_num_asc");
+            num_num_mangles = asorti(num_mangles, num_mangles, "@ind_num_asc");
+            num_names = asorti(names, names, "@ind_str_asc");
+
+            printf("\nby num_mangle\n");
+            for (i_num_mangle = 1; i_num_mangle <= num_num_mangles; i_num_mangle++) {
+                print_header("num_mangle", "size");
+                for (i_size = 1; i_size <= num_sizes; i_size++) {
+                    print_line(num_mangles[i_num_mangle], sizes[i_size], i_size, i_num_mangle);
+                }
+                printf("\n");
+            }
+
+            printf("\nby size\n");
+            for (i_size = 1; i_size <= num_sizes; i_size++) {
+                print_header("size", "num_mangle");
+                for (i_num_mangle = 1; i_num_mangle <= num_num_mangles; i_num_mangle++) {
+                    print_line(sizes[i_size], num_mangles[i_num_mangle], i_size, i_num_mangle);
+                }
+                printf("\n");
+            }
+        }
+        ' "$stats_file" > "$stats_file".combined.new
+        mv -f "$stats_file".combined.new "$stats_file".combined
+        copy < "$stats_file".combined
+        expand -t 15 "$stats_file".combined
+done
+
