@@ -78,6 +78,11 @@ for stats_file; do
         }
         ' "$stats_file" > "$stats_file".combined.new
         mv -f "$stats_file".combined.new "$stats_file".combined
+        # This `copy` command should be a script/function that copies stdin to the clipboard.
+        # eg. in X11:
+        #     xclip -selection clipboard
+        # eg. in MacOS:
+        #     pbcopy
         copy < "$stats_file".combined
         expand -t 15 "$stats_file".combined
 done
