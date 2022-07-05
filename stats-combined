@@ -32,12 +32,19 @@ for stats_file; do
         function print_header(first, second) {
             printf("%s\t%s", first, second);
             for (i_name = 1; i_name <= num_names; i_name++) {
-                printf("\t%s", unmangle_name(names[i_name]) " MB/s");
+                printf("\t%s", unmangle_name(names[i_name]) " (MB/s)");
             }
+
             printf("\t\t%s\t%s", first, second);
             for (i_name = 1; i_name <= num_names; i_name++) {
-                printf("\t%s", unmangle_name(names[i_name]) " msgs/s");
+                printf("\t%s", unmangle_name(names[i_name]) " (msgs/s)");
             }
+
+            printf("\t\t%s\t%s", first, second);
+            for (i_name = 1; i_name <= num_names; i_name++) {
+                printf("\t%s", unmangle_name(names[i_name]) " (KB/s)");
+            }
+
             printf("\n");
         }
 
@@ -46,10 +53,17 @@ for stats_file; do
             for (i_name = 1; i_name <= num_names; i_name++) {
                 printf("\t%s", mb_sec[sizes[i_size],num_mangles[i_num_mangle],names[i_name]]);
             }
+
             printf("\t\t%s\t%s", first, second);
             for (i_name = 1; i_name <= num_names; i_name++) {
                 printf("\t%s", msgs_sec[sizes[i_size],num_mangles[i_num_mangle],names[i_name]]);
             }
+
+            printf("\t\t%s\t%s", first, second);
+            for (i_name = 1; i_name <= num_names; i_name++) {
+                printf("\t%s", 1024*mb_sec[sizes[i_size],num_mangles[i_num_mangle],names[i_name]]);
+            }
+
             printf("\n");
         }
 
@@ -60,7 +74,7 @@ for stats_file; do
 
             printf("\nby num_mangle\n");
             for (i_num_mangle = 1; i_num_mangle <= num_num_mangles; i_num_mangle++) {
-                print_header("num_mangle", "size");
+                print_header("num_mangle (bytes)", "size (bytes)");
                 for (i_size = 1; i_size <= num_sizes; i_size++) {
                     print_line(num_mangles[i_num_mangle], sizes[i_size], i_size, i_num_mangle);
                 }
@@ -69,7 +83,7 @@ for stats_file; do
 
             printf("\nby size\n");
             for (i_size = 1; i_size <= num_sizes; i_size++) {
-                print_header("size", "num_mangle");
+                print_header("size (bytes)", "num_mangle (bytes)");
                 for (i_num_mangle = 1; i_num_mangle <= num_num_mangles; i_num_mangle++) {
                     print_line(sizes[i_size], num_mangles[i_num_mangle], i_size, i_num_mangle);
                 }
